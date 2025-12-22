@@ -116,7 +116,7 @@ export const loginUser = async (req, res) => {
     }
     const userData = {
       _id: user._id,
-      username: user.userName,
+      username: user.username,
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,

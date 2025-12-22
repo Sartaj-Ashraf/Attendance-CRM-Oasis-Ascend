@@ -3,8 +3,22 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 const app = express();
 const router = express.Router();
 // router.get("/statuses", getAllStatuses);
-app.get("/isAuth", authMiddleware, (req, res) => {
-  const { role, id } = req.user;
-  return res.status(200).json({ data: { role, id } });
+app.get("/isAuth", authMiddleware, async (req, res) => {
+  const user = await UserModel.findById(req.user.id).select(
+    "username email role"
+  );
+
+  if (!user) {
+    return res.status(401).json({ msg: "User not found" });
+  }
+
+  return res.status(200).json({
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    },
+  });
 });
 export default router;

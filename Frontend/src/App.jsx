@@ -1,15 +1,21 @@
-import React from "react";
+import React, { useContext } from "react";
 import Verify from "./pages/Verify";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAuth } from "./ContextApi/isAuth";
+import { AuthContext } from "./ContextApi/isAuth";
+
 import Maindashboard from "./pages/Dashboard/Maindashboard.jsx";
 
 const App = () => {
-  const { role, isAuth } = useAuth(); // ✅ FIX HERE
-  console.log({role,isAuth})
+  const { user, isAuth, loading } = useContext(AuthContext);
+
+  console.log({ user, isAuth });
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div>
@@ -19,9 +25,16 @@ const App = () => {
         hideProgressBar
         theme="dark"
       />
+
       <Routes>
-        <Route path='/dashboard' element={<Maindashboard />} />
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+
+        <Route
+          path="/dashboard"
+          element={isAuth ? <Maindashboard /> : <Login />}
+        />
+
         <Route path="/set-password" element={<Verify />} />
       </Routes>
     </div>

@@ -9,7 +9,7 @@ import {
 } from "../Controllers/User.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 const router = express.Router();
-router.get("/login", loginUser);
+router.post("/login", loginUser);
 router.get("/verifyToken", verifyToken);
 router.patch("/setpassword", setPassword);
 router.get("/getCurrentUserdata", authMiddleware, getcurrentData);

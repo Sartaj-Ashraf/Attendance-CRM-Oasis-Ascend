@@ -52,7 +52,7 @@ const Attendance = () => {
         <p className="py-1">Present: <span className="font-semibold text-green-400">{summary.present || 0}</span></p>
         <p className="py-1">Absent: <span className="font-semibold text-red-400">{summary.absent || 0}</span></p>
         <p className="py-1">Half Day: <span className="font-semibold text-yellow-400">{summary.halfday || 0}</span></p>
-        <p className="py-1">Unknown: <span className="font-semibold text-gray-400">{summary.unknown || 0}</span></p>
+        <p className="py-1">Holidays: <span className="font-semibold text-gray-400">{summary.holidays || 0}</span></p>
       </div>
 
     </div>

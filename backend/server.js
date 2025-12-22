@@ -20,7 +20,7 @@ const app = express();
 app.use(
   cors({
     origin:
-      process.env.NODE_ENV === "development"
+      process.env.MODE === "development"
         ? process.env.LOCAL_URL
         : process.env.FRONTEND_URL,
 

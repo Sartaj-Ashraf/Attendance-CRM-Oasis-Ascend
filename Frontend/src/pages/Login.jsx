@@ -4,15 +4,13 @@ import api from "../axios/axios.js";
 import axios from "axios";
 import { AuthContext } from "../ContextApi/isAuth.jsx";
 
-
 const Login = () => {
   const { setUser, setIsAuth } = useContext(AuthContext);
 
   const [formdata, setFormdata] = useState({
-    email: "",
-    password: "",
+    email: "est@12",
+    password: "umaidk",
   });
-
 
   const changeHandler = (e) => {
     setFormdata({
@@ -30,16 +28,17 @@ const Login = () => {
         password: formdata.password,
       });
       setIsAuth(true);
+      // console.log(res.user);
       setUser(res.data.user);
 
       // toast.success("Login successful");
       navigate("/dashboard");
-      console.log(res.data);
+      // console.log(res.data);
     } catch (error) {
       console.log(error);
     }
   };
-
+  console.log(import.meta.env.VITE_BACKEND_URL);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
@@ -70,8 +69,12 @@ const Login = () => {
         >
           Continue
         </button>
-        <button onClick={() => navigate("/set-password")}className="w-full mt-3 text-blue-600 hover:text-blue-700 font-medium hover:underline transition duration-200">
-          Forgot Password?</button>
+        <button
+          onClick={() => navigate("/resetpassword")}
+          className="w-full mt-3 text-blue-600 hover:text-blue-700 font-medium hover:underline transition duration-200"
+        >
+          Forgot Password?
+        </button>
       </div>
     </div>
   );

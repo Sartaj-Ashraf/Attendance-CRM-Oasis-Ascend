@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { User } from "lucide-react";
 import { AuthContext } from "../../ContextApi/isAuth";
-
+import Userdashboard from "./User/Userdashboard"
 const Maindashboard = () => {
   const { isAuth, user, loading } = useContext(AuthContext);
 
@@ -9,9 +9,10 @@ const Maindashboard = () => {
 
   if (!isAuth) return <p>Not authorized</p>;
 
+  {user.role ==="user" && <Userdashboard/>}
+
   if (!user) return <p>Loading user...</p>;
 
   return <h1>Welcome {user.name}</h1>;
-};
-
+}
 export default Maindashboard;

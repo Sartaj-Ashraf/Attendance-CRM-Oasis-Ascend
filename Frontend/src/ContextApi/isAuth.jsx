@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState } from "react";
-import api from "../axios/axios";
-
+// import api from "../axios/axios.js";
+import api from "../axios/axios.js";
+import axios from "axios";
 export const AuthContext = createContext(null);
 
 const AuthProvider = ({ children }) => {
@@ -11,7 +12,12 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get("/api/isAuth");
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/isAuth`,
+          {
+            withCredentials: true, // 🔥 IMPORTANT
+          }
+        );
         setUser(res.data.user);
         setIsAuth(true);
       } catch (error) {
@@ -32,7 +38,7 @@ const AuthProvider = ({ children }) => {
         isAuth,
         loading,
         setUser,
-        setIsAuth
+        setIsAuth,
       }}
     >
       {children}

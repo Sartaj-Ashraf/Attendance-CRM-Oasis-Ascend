@@ -204,10 +204,10 @@ export const resetpassword = async (req, res) => {
 };
 export const logout = (req, res) => {
   try {
-    res.clearCookie("token", {
+    res.clearCookie("AttendenceToken", {
       httpOnly: true,
-      secure: true, // must match how it was set
-      sameSite: "strict",
+      secure: process.env.MODE === "production", // must match how it was set
+      sameSite: process.env.MODE === "production" ? "none" : "lax",
       path: "/", // important
     });
     return res.status(200).json({

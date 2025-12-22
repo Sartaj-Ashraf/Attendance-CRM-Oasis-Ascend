@@ -8,7 +8,6 @@ const Userdashboard = () => {
 
   return (
     <div className="flex bg-gray-900 min-h-screen text-gray-100">
-
       <Sidebar setPage={setPage} />
 
       <div className="flex-1">

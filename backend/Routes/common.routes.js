@@ -2,8 +2,10 @@ import express from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 const app = express();
 const router = express.Router();
+import UserModel from "../Models/User.model.js";
+
 // router.get("/statuses", getAllStatuses);
-app.get("/isAuth", authMiddleware, async (req, res) => {
+router.get("/isAuth", authMiddleware, async (req, res) => {
   const user = await UserModel.findById(req.user.id).select(
     "username email role"
   );

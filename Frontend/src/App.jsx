@@ -5,14 +5,11 @@ import Login from "./pages/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthContext } from "./ContextApi/isAuth";
-
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Maindashboard from "./pages/Dashboard/Maindashboard.jsx";
 import Resetpassword from "./pages/Resetpassword.jsx";
 const App = () => {
   const { user, isAuth, loading } = useContext(AuthContext);
-
-  console.log({ user, isAuth });
-
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -29,14 +26,18 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-
+        <Route path="/forgot-password" element={<Resetpassword />} />
         <Route
           path="/dashboard"
-          element={isAuth ? <Maindashboard /> : <Login />}
+          element={
+            <ProtectedRoute>
+              <Maindashboard />
+            </ProtectedRoute>
+          }
         />
 
         <Route path="/set-password" element={<Verify />} />
-        <Route path='resetpassword' element={<Resetpassword/>} />
+        <Route path="resetpassword" element={<Resetpassword />} />
       </Routes>
     </div>
   );

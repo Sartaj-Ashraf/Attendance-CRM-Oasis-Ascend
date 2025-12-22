@@ -1,11 +1,42 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 const Resetpassword = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  const [data, setData] = useState("");
 
-export default Resetpassword
+  const changeHandler = (e) => {
+    setData(e.target.value);
+  };
+
+  const submithandler = () => {
+    console.log(data);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Reset Password
+        </h2>
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          value={data}
+          onChange={changeHandler}
+          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <button
+          onClick={submithandler}
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold"
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Resetpassword;
+

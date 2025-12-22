@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { AuthContext } from "./ContextApi/isAuth";
 
 import Maindashboard from "./pages/Dashboard/Maindashboard.jsx";
-
+import Resetpassword from "./pages/Resetpassword.jsx";
 const App = () => {
   const { user, isAuth, loading } = useContext(AuthContext);
 
@@ -36,6 +36,7 @@ const App = () => {
         />
 
         <Route path="/set-password" element={<Verify />} />
+        <Route path='resetpassword' element={<Resetpassword/>} />
       </Routes>
     </div>
   );

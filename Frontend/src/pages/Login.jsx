@@ -2,8 +2,8 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../axios/axios.js";
 import axios from "axios";
-
 import { AuthContext } from "../ContextApi/isAuth.jsx";
+
 
 const Login = () => {
   const { setUser, setIsAuth } = useContext(AuthContext);
@@ -12,6 +12,7 @@ const Login = () => {
     email: "",
     password: "",
   });
+
 
   const changeHandler = (e) => {
     setFormdata({
@@ -69,6 +70,8 @@ const Login = () => {
         >
           Continue
         </button>
+        <button onClick={() => navigate("/set-password")}className="w-full mt-3 text-blue-600 hover:text-blue-700 font-medium hover:underline transition duration-200">
+          Forgot Password?</button>
       </div>
     </div>
   );

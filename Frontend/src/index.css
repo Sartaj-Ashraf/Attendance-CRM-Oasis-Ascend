@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* @layer base {
+  :root {
+    --color-primary: #1E40AF;
+    --color-secondary: #1E3A8A;
+    --color-accent: #3B82F6;
+
+    --color-bg: #F8FAFC;
+    --color-card: #FFFFFF;
+  }
+} */

@@ -1,44 +1,68 @@
+// src/context/AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from "react";
 import api from "../axios/axios";
 
-// ✅ Context
+// Create context
 const AuthContext = createContext(null);
 
-// ✅ Provider
+// Provider
 const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);   
   const [isAuth, setIsAuth] = useState(false);
-  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(true);
 
+  // --- AUTO LOGIN / CHECK SESSION ---
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchUser = async () => {
       try {
-        const res = await api.get("/isAuth");
+        const res = await api.get("/isAuth"); // must return user + role
+        setUser(res.data.user);
         setIsAuth(true);
-        setRole(res.data.role);
-      } catch (err) {
+      } catch (error) {
+        setUser(null);
         setIsAuth(false);
-        setRole("");
+      } finally {
+        setLoading(false);
       }
     };
 
-    checkAuth();
+    fetchUser();
   }, []);
 
+  // --- LOGIN HANDLER ---
+  const login = async (credentials) => {
+    const res = await api.post("/login", credentials); 
+    setUser(res.data.user);
+    setIsAuth(true);
+  };
+
+  // --- LOGOUT HANDLER ---
+  const logout = async () => {
+    await api.post("/logout");
+    setUser(null);
+    setIsAuth(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuth, setIsAuth, role, setRole }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuth,
+        loading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ✅ MUST be a named export
+// Custom Hook
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
 };
 
-// ✅ default export
 export default AuthProvider;

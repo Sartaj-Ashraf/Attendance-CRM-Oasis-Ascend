@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from "axios";
 import api from "../axios/axios.js"
 const Login = () => {
   const [formdata, setFormdata] = useState({

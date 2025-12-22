@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from "../axios/axios.js"
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../axios/axios.js";
+import axios from "axios";
+
+import { AuthContext } from "../ContextApi/isAuth.jsx";
+
 const Login = () => {
+  const { setUser, setIsAuth } = useContext(AuthContext);
+
   const [formdata, setFormdata] = useState({
     email: "",
-    password: ""
+    password: "",
   });
 
   const changeHandler = (e) => {
     setFormdata({
       ...formdata,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -18,14 +24,16 @@ const Login = () => {
 
   const submitDetails = async () => {
     try {
-      const { data } = await api("/user/login", {
+      const res = await api.post("/user/login", {
         email: formdata.email,
-        password: formdata.password
+        password: formdata.password,
       });
+      setIsAuth(true);
+      setUser(res.data.user);
 
-      if (data.success) {
-        navigate('/home');
-      }
+      // toast.success("Login successful");
+      navigate("/dashboard");
+      console.log(res.data);
     } catch (error) {
       console.log(error);
     }
@@ -34,7 +42,9 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+          Login
+        </h2>
 
         <input
           name="email"

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import SetPassword from "./setPassword";
-import api from "../axios/axios.js";
 const Verify = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");

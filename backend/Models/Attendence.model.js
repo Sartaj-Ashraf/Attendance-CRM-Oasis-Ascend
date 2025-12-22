@@ -13,15 +13,21 @@ const attendanceSchema = new mongoose.Schema(
       type: Date,
       required: true,
       index: true,
+      default: () => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+      },
     },
 
     status: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Status",
+      type: String,
       required: true,
+      enum: ["present", "absent", "leave", "late"],
+      lowercase: true,
+      index: true,
     },
 
-    // Owner/Admin who last marked attendance
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -38,11 +44,5 @@ const attendanceSchema = new mongoose.Schema(
 
 // 🔒 One attendance per user per day
 attendanceSchema.index({ user: 1, date: 1 }, { unique: true });
-
-// Normalize date to day-level
-attendanceSchema.pre("save", function (next) {
-  this.date.setHours(0, 0, 0, 0);
-  next();
-});
 
 export default mongoose.model("Attendance", attendanceSchema);

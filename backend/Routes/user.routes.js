@@ -6,6 +6,7 @@ import {
   getCurrentAttendance,
   resetpassword,
   logout,
+  getAttendanceSummary
 } from "../Controllers/User.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 const router = express.Router();
@@ -15,4 +16,6 @@ router.patch("/setpassword", setPassword);
 router.get("/getCurrentUserdata", authMiddleware, getCurrentAttendance);
 router.post("/resetpassword", resetpassword);
 router.post("/logout", authMiddleware, logout);
+router.post("/getAttendanceSummary", authMiddleware, getAttendanceSummary);
+
 export default router;

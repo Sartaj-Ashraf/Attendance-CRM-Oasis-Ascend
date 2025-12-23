@@ -19,28 +19,44 @@
 
 // export default Sidebar;
 
+import { NavLink } from "react-router-dom";
 
-import React from "react";
-
-const Sidebar = ({ setPage }) => {
+const Sidebar = () => {
   return (
     <div className="w-64 min-h-screen bg-gray-100 p-6">
       <div className="bg-white shadow-lg rounded-xl p-6 flex flex-col">
-        <h2 className="text-2xl font-bold mb-8 text-gray-800">
-          Dashboard
-        </h2>
+        <h2 className="text-2xl font-bold mb-8 text-gray-800">Dashboard</h2>
 
-        <button
-          onClick={() => setPage("Attendance")}
-          className="w-full text-left px-4 py-3 rounded-lg font-medium text-gray-700 bg-gray-50 border border-gray-200
-                     hover:bg-blue-600 hover:text-white hover:border-blue-600 transition"
+        <NavLink
+          to="/dashboard/attendance"
+          className={({ isActive }) =>
+            `w-full text-left px-4 py-3 rounded-lg font-medium transition
+            ${
+              isActive
+                ? "bg-blue-600 text-white border border-blue-600"
+                : "text-gray-700 bg-gray-50 border border-gray-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+            }`
+          }
         >
           Attendance
-        </button>
+        </NavLink>
+        {/* <h1>salary </h1> */}
+        <NavLink
+          to="/dashboard/attendance"
+          className={({ isActive }) =>
+            `w-full text-left px-4 py-3 mt-2 rounded-lg font-medium transition
+            ${
+              isActive
+                ? "bg-blue-600 text-white border border-blue-600"
+                : "text-gray-700 bg-gray-50 border border-gray-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+            }`
+          }
+        >
+          salary
+        </NavLink>
       </div>
     </div>
   );
 };
 
 export default Sidebar;
-

@@ -16,6 +16,6 @@ router.patch("/setpassword", setPassword);
 router.get("/getCurrentUserdata", authMiddleware, getCurrentAttendance);
 router.post("/resetpassword", resetpassword);
 router.post("/logout", authMiddleware, logout);
-router.post("/getAttendanceSummary", authMiddleware, getAttendanceSummary);
+router.get("/getAttendanceSummary", authMiddleware, getAttendanceSummary);
 
 export default router;

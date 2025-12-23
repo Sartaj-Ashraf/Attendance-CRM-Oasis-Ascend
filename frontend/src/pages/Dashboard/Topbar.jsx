@@ -41,15 +41,16 @@
 
 // export default Topbar;
 
-
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../../axios/axios.js";
+import api from "../../axios/axios.js";
+import { AuthContext } from "../../ContextApi/isAuth.jsx";
 
 const Topbar = () => {
+  const { user, isAuth, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
-
+  console.log(user.email);
   const LogoutHandler = async () => {
     try {
       await api.post("/user/logout");
@@ -58,13 +59,17 @@ const Topbar = () => {
   };
 
   return (
-    <div className="w-full bg-white shadow-lg rounded-xl mx-6 mt-6 px-6 py-4 flex items-center justify-between">
+    <div className="w-full bg-white shadow-lg rounded-xl  mt-6 px-10 py-4 flex items-center justify-between  ">
       <h3 className="text-lg font-semibold text-gray-800">
-        Welcome, <span className="text-blue-600">{username || "User"}</span>
+        Welcome,{" "}
+        <span className="text-blue-600 text-2xl">{user.username || "User"}</span>
       </h3>
 
       <div className="flex items-center gap-4">
-        <span className="text-2xl text-gray-500">👤</span>
+        <div className="flex flex-col text-center">
+          <span className="text-2xl text-gray-500">👤</span>
+          <span>{user.email}</span>
+        </div>
 
         <button
           onClick={LogoutHandler}

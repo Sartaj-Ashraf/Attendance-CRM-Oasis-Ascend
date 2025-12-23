@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import UserModel from "../Models/User.model.js";
@@ -115,6 +116,12 @@ export const loginUser = async (req, res) => {
     if (!user.isActive) {
       return res.status(400).json({ msg: "Your Account is disable by Admin " });
     }
+    if (user.isDeleted) {
+      return res.status(403).json({
+        success: false,
+        msg: "You are no longer a member of the society.",
+      });}
+   
     const userData = {
       _id: user._id,
       username: user.username,
@@ -194,6 +201,7 @@ export const getCurrentAttendance = async (req, res) => {
       page,
       limit,
       query,
+
       sort: { date: -1 },
     });
 
@@ -208,6 +216,83 @@ export const getCurrentAttendance = async (req, res) => {
   }
 };
 
+export const getAttendanceSummary = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { from, to } = req.query;
+
+    // 🔹 Validate dates
+    if (from && isNaN(new Date(from))) {
+      return res.status(400).json({ msg: "Invalid from date" });
+    }
+
+    if (to && isNaN(new Date(to))) {
+      return res.status(400).json({ msg: "Invalid to date" });
+    }
+
+    // 🔹 Build match query (FIXED ✅)
+    const match = {
+      user: new mongoose.Types.ObjectId(id), // 🔥 IMPORTANT FIX
+    };
+
+    if (from || to) {
+      match.date = {};
+
+      if (from) {
+        const fromDate = new Date(from);
+        fromDate.setHours(0, 0, 0, 0);
+        match.date.$gte = fromDate;
+      }
+
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        match.date.$lte = toDate;
+      }
+    }
+
+    // 🔍 Debug (keep temporarily)
+    console.log("MATCH QUERY:", match);
+
+    // 🔹 MongoDB aggregation
+    const summary = await Attendance.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // 🔹 Format response
+    const result = {
+      present: 0,
+      absent: 0,
+      leave: 0,
+      late: 0,
+      total: 0,
+    };
+
+    summary.forEach((item) => {
+      const key = item._id?.toLowerCase();
+      if (result[key] !== undefined) {
+        result[key] = item.count;
+        result.total += item.count;
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      from: from || null,
+      to: to || null,
+      summary: result,
+    });
+  } catch (error) {
+    console.error("getAttendanceSummary error:", error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+};
 
 export const resetpassword = async (req, res) => {
   try {

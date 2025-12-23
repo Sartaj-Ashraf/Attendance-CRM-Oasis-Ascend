@@ -8,7 +8,7 @@ import { AuthContext } from "./ContextApi/isAuth";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Maindashboard from "./pages/Dashboard/Maindashboard.jsx";
 import Resetpassword from "./pages/Resetpassword.jsx";
-import { Toaster } from "sonner";
+import Userdashboard from "./pages/Dashboard/User/Userdashboard.jsx";
 const App = () => {
   const { user, isAuth, loading } = useContext(AuthContext);
   if (loading) {
@@ -23,19 +23,7 @@ const App = () => {
         hideProgressBar
         theme="dark"
       />
-      <Toaster
-        position="top-center"
-        richColors
-        expand
-        closeButton
-        toastOptions={{
-          style: {
-            fontSize: "14px",
-            borderRadius: "12px",
-            padding: "14px 18px",
-          },
-        }}
-      />
+
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -49,6 +37,7 @@ const App = () => {
           }
         />
 
+        <Route path="/test" element={<Userdashboard />} />
         <Route path="/set-password" element={<Verify />} />
         <Route path="resetpassword" element={<Resetpassword />} />
       </Routes>

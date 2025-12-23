@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../axios/axios.js";
 import axios from "axios";
 import { AuthContext } from "../ContextApi/isAuth.jsx";
+import { toast } from "sonner";
 
 const Login = () => {
   const { setUser, setIsAuth } = useContext(AuthContext);
@@ -31,10 +32,14 @@ const Login = () => {
       // console.log(res.user);
       setUser(res.data.user);
 
+      toast.success("Login successfully!");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 2000);
       // toast.success("Login successful");
-      navigate("/dashboard");
       // console.log(res.data);
     } catch (error) {
+      toast.error("Something went wrong");
       console.log(error);
     }
   };

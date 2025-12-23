@@ -6,6 +6,7 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
 import { sendSetPasswordEmail } from "../services/email.service.js";
+import { paginate } from "../utils/pagination.js";
 export const verifyToken = async (req, res) => {
   try {
     const { email, token } = req.query;
@@ -138,11 +139,25 @@ export const loginUser = async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
-export const getcurrentData = async (req, res) => {
+
+export const getCurrentAttendance = async (req, res) => {
   try {
     const { id } = req.user;
     const { from, to } = req.query;
 
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    // 🔹 Validate dates
+    if (from && isNaN(new Date(from))) {
+      return res.status(400).json({ msg: "Invalid from date" });
+    }
+
+    if (to && isNaN(new Date(to))) {
+      return res.status(400).json({ msg: "Invalid to date" });
+    }
+
+    // 🔹 Validate user
     const user = await UserModel.findById(id).select(
       "-password -passwordSetupToken -passwordSetupExpires"
     );
@@ -151,33 +166,48 @@ export const getcurrentData = async (req, res) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // Build date filter
-    const dateFilter = {};
+    // 🔹 Build query
+    const query = { user: id };
+
     if (from || to) {
-      dateFilter.date = {};
-      if (from) dateFilter.date.$gte = new Date(from);
-      if (to) dateFilter.date.$lte = new Date(to);
+      query.date = {};
+
+      if (from) {
+        const fromDate = new Date(from);
+        fromDate.setHours(0, 0, 0, 0);
+        query.date.$gte = fromDate;
+      }
+
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        query.date.$lte = toDate;
+      }
     }
 
-    const attendance = await Attendance.find({
-      user: id,
-      ...dateFilter,
-    })
-      .populate({
-        path: "status",
-        select: "status payment description isActive",
-      })
-      .sort({ date: -1 });
+    // 🔍 DEBUG LOG (TEMPORARY)
+    console.log("Attendance Query:", query);
+
+    // 🔹 Paginate
+    const result = await paginate({
+      model: Attendance,
+      page,
+      limit,
+      query,
+      sort: { date: -1 },
+    });
 
     return res.status(200).json({
+      success: true,
       user,
-      attendance,
+      ...result,
     });
   } catch (error) {
-    console.error(error);
+    console.error("getCurrentAttendance error:", error);
     return res.status(500).json({ msg: "Server error" });
   }
 };
+
 
 export const resetpassword = async (req, res) => {
   try {

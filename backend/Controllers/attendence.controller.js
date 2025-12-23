@@ -27,7 +27,7 @@ export const markAttendance = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const attendance = await AttendanceModel.findOneAndUpdate(
+    const attendance = await AttendenceModel.findOneAndUpdate(
       { user: userId, date: today },
       {
         status: status.toLowerCase(),
@@ -64,24 +64,27 @@ export const markBulkAttendance = async (req, res) => {
     const attendanceDate = date ? new Date(date) : new Date();
     attendanceDate.setHours(0, 0, 0, 0);
 
-    const bulkOps = records.map(({ userId, status, note }) => {
-      if (!userId || !allowedStatuses.includes(status?.toLowerCase())) return null;
+    const bulkOps = records
+      .map(({ userId, status, note }) => {
+        if (!userId || !allowedStatuses.includes(status?.toLowerCase()))
+          return null;
 
-      return {
-        updateOne: {
-          filter: { user: userId, date: attendanceDate },
-          update: {
-            $set: {
-              status: status.toLowerCase(),
-              note,
-              markedBy: req.user._id,
-              date: attendanceDate,
+        return {
+          updateOne: {
+            filter: { user: userId, date: attendanceDate },
+            update: {
+              $set: {
+                status: status.toLowerCase(),
+                note,
+                markedBy: req.user._id,
+                date: attendanceDate,
+              },
             },
+            upsert: true,
           },
-          upsert: true,
-        },
-      };
-    }).filter(Boolean);
+        };
+      })
+      .filter(Boolean);
 
     if (!bulkOps.length) {
       return res.status(400).json({ msg: "No valid attendance records" });

@@ -15,8 +15,10 @@ import userRouter from "./Routes/user.routes.js";
 import ownerRoute from "./Routes/owner.routes.js";
 import commonRoute from "./Routes/common.routes.js";
 import { seed } from "./seed/seedStatus.js";
+import { generateAttendances } from "./seed/tempUser.js";
 connectDB();
 const app = express();
+
 app.use(
   cors({
     origin:
@@ -32,6 +34,7 @@ app.use(
   })
 );
 // seed();
+// generateAttendances();
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
@@ -43,7 +46,6 @@ app.use("/user", userRouter);
 app.use("/owner", ownerRoute);
 app.use("/api", commonRoute);
 // auth middleware
-
 
 app.listen(PORT, () => {
   console.log(`running on port ${PORT}`);

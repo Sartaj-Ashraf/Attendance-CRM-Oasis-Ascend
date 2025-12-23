@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import { User } from "lucide-react";
 import { AuthContext } from "../../ContextApi/isAuth";
 import Userdashboard from "./User/Userdashboard.jsx";
-import AttendanceDashboard from "./onwer/AttendanceDashboard.jsx";
+
+import AdminDashboard from "./onwer/AdminDashboard";
 const Maindashboard = () => {
   const { isAuth, user, loading } = useContext(AuthContext);
 

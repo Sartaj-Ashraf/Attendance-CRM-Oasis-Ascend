@@ -1,20 +1,24 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import AdminSidebar from "./AdminSidebar";
+
 import Topbar from "../Topbar";
 
-const Userdashboard = () => {
+const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <Sidebar />
+      {/* Admin Sidebar */}
+      <AdminSidebar />
 
+      {/* Main Content */}
       <div className="flex-1">
         <Topbar />
+
         <div className="p-8">
-          <Outlet /> {/* 👈 renders Attendance, Salary, etc */}
+          <Outlet /> {/* 👈 Admin pages render here */}
         </div>
       </div>
     </div>
   );
 };
 
-export default Userdashboard;
+export default AdminDashboard;

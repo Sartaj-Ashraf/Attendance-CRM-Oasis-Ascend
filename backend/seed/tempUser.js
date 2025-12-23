@@ -8,7 +8,7 @@ export const generateAttendances = async () => {
 
   const records = [];
 
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 100; i++) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     date.setHours(0, 0, 0, 0);

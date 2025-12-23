@@ -10,3 +10,7 @@
     --color-card: #FFFFFF;
   }
 } */
+
+*{
+  overflow-x: hidden;
+}

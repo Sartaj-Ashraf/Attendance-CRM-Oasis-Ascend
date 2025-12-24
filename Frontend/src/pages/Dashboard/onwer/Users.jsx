@@ -78,9 +78,43 @@ const Users = () => {
 console.log(users)
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        Users
-      </h1>
+
+     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+  
+  {/* LEFT: TITLE */}
+  <h1 className="text-2xl font-bold text-gray-800">
+    Users
+  </h1>
+
+  {/* RIGHT: CONTROLS */}
+  <div className="flex flex-wrap items-center gap-3">
+    
+    {/* SEARCH */}
+    <input
+      type="text"
+      placeholder="Search user..."
+      className="px-4 py-2 border border-blue-300 rounded-lg focus:outline-none "
+    />
+
+     <select
+      className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+    >
+      <option value="all">All</option>
+      <option value="unblocked">Unblocked</option>
+      <option value="blocked">Blocked</option>
+    </select>
+
+    {/* ADD USER */}
+    <button
+      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+    >
+      Add User
+    </button>
+
+  </div>
+</div>
+
+    
 
       <div className="bg-white shadow-lg rounded-xl overflow-hidden">
         <table className="w-full text-left">

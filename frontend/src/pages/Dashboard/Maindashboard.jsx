@@ -1,9 +1,9 @@
 import React, { useContext } from "react";
 import { User } from "lucide-react";
 import { AuthContext } from "../../ContextApi/isAuth";
-import Userdashboard from "./User/Userdashboard.jsx";
+import Userdashboard from "../Userdashboard.jsx";
 
-import AdminDashboard from "./onwer/AdminDashboard";
+import AdminDashboard from "../AdminDashboard.jsx";
 const Maindashboard = () => {
   const { isAuth, user, loading } = useContext(AuthContext);
 
@@ -15,6 +15,6 @@ const Maindashboard = () => {
 
   console.log(user.role);
   // return <>{user?.role === "employee" && <AttendanceDashboard />}</>;
-  return <>{user?.role === "employee" && <Userdashboard />}</>;
+  // return <>{user?.role === "employee" && <Userdashboard />}</>;
 };
 export default Maindashboard;

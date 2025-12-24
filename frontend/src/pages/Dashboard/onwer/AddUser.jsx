@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../axios/axios";
-
+import toast from "react-hot-toast";
 const AddUser = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     username: "",
     email: "",
+    phone: "",
+    payment: "paid",
     role: "employee",
-    number: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -17,11 +18,11 @@ const AddUser = () => {
 
   // 🔹 Handle input change
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -29,22 +30,28 @@ const AddUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.email) {
-      setError("Username and Email are required");
+    if (!form.username || !form.email || !form.phone) {
+      toast.error("All fields are required");
       return;
     }
-
+    const toastId = toast.loading("Creating user...");
+    console.log(form);
     try {
       setLoading(true);
       setError(null);
 
-      await api.post("/admin/users", form);
-
-      // ✅ Success → redirect
-      navigate("/admin/users");
+      const response = await api.post("/owner/create", form);
+      toast.success("User created successfully 🎉", {
+        id: toastId,
+      });
+      setTimeout(() => {
+        navigate("/admin/users");
+      }, 2000);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.msg || "Failed to create user");
+      toast.error(err.response?.data?.message || "Failed to create user", {
+        id: toastId,
+      });
     } finally {
       setLoading(false);
     }
@@ -62,7 +69,6 @@ const AddUser = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Username
@@ -72,12 +78,11 @@ const AddUser = () => {
               value={form.username}
               onChange={handleChange}
               type="text"
-              placeholder="John Doe"
-              className="mt-1 w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Umaid Hamid"
+              className="mt-1 w-full border rounded-lg px-4 py-2"
             />
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Email
@@ -87,29 +92,48 @@ const AddUser = () => {
               value={form.email}
               onChange={handleChange}
               type="email"
-              placeholder="john@example.com"
-              className="mt-1 w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="umaid@gmail.com"
+              className="mt-1 w-full border rounded-lg px-4 py-2"
             />
           </div>
+
+          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Phone Number
             </label>
             <input
-              name="number"
-              value={form.number}
+              type="text"
+              inputMode="numeric"
+              name="phone"
+              value={form.phone}
               onChange={handleChange}
-              type="number"
-              placeholder="91xxxxxx"
-              className="mt-1 w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="91XXXXXXXXXX"
+              className="mt-1 w-full border rounded-lg px-4 py-2"
             />
           </div>
+
+          {/* Payment */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Payment
+            </label>
+            <select
+              name="payment"
+              value={form.payment}
+              onChange={handleChange}
+              className="mt-1 w-full border rounded-lg px-4 py-2 bg-white"
+            >
+              <option value="paid">Paid</option>
+              <option value="unpaid">Unpaid</option>
+            </select>
+          </div>
+
           {/* Role */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Role
             </label>
-
             <select
               name="role"
               value={form.role}
@@ -117,18 +141,15 @@ const AddUser = () => {
               className="mt-1 w-full border rounded-lg px-4 py-2 bg-white"
             >
               <option value="employee">Employee</option>
-              {/* <option value="admin">Admin</option> */}
             </select>
           </div>
-
-          {/* Active */}
 
           {/* Actions */}
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="px-6 py-2 rounded-lg border"
             >
               Cancel
             </button>
@@ -136,7 +157,7 @@ const AddUser = () => {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50"
             >
               {loading ? "Creating..." : "Add User"}
             </button>

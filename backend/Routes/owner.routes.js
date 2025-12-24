@@ -7,6 +7,8 @@ import {
   activateaccount,
   assignRole,
   deleteUser,
+  getAllUsers,
+  getBlockedUser,
 } from "../Controllers/owner.controller.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
@@ -21,4 +23,6 @@ router.post("/asignrole/:id", authMiddleware, isAdmin, assignRole);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
 router.post("/attendance/bulk", authMiddleware, markBulkAttendance);
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);
+router.post("/getAllUsers", authMiddleware, isAdmin, getAllUsers);
+router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 export default router;

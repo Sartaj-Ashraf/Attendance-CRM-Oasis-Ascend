@@ -6,11 +6,7 @@ const Users = () => {
 
   return (
     <div>
-      {isAddPage && (
-        <h2 className="text-xl font-bold">
-          <Outlet />
-        </h2>
-      )}
+     
     </div>
   );
 };

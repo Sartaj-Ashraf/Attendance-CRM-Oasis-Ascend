@@ -7,15 +7,14 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 export const createUser = async (req, res) => {
   try {
-    let { username, email, role, payment } = req.body;
-    if (!username || !email || !role || !payment) {
+    let { username, email, role, payment, phone } = req.body;
+    if (!username || !email || !role || !payment || !phone) {
       return res.status(400).json({ message: "All fields are required" });
     }
     username = username?.toLowerCase();
     email = email?.toLowerCase();
     role = role?.toLowerCase();
     payment = payment?.toLowerCase();
-
     // 1. Validation
     if (role !== "employee") {
       return res.status(400).json({
@@ -60,6 +59,7 @@ export const createUser = async (req, res) => {
       email,
       role,
       payment,
+      phone,
       password: hashedPassword,
       passwordSetupToken,
       passwordSetupExpires: Date.now() + 60 * 60 * 1000,
@@ -238,35 +238,57 @@ export const assignRole = async (req, res) => {
   }
 };
 
+// export const getAllUsers = async (req, res) => {
+//   try {
+//     const users = await UserModel.find().select("-password");
+
+//     const usersWithAttendance = await Promise.all(
+//       users.map(async (user) => {
+//         const attendance = await Attendance.find({ user: user._id }).populate(
+//           "status"
+//         );
+
+//         return {
+//           ...user.toObject(),
+//           attendance,
+//         };
+//       })
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       users: usersWithAttendance,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await UserModel.find().select("-password");
-
-    const usersWithAttendance = await Promise.all(
-      users.map(async (user) => {
-        const attendance = await Attendance.find({ user: user._id }).populate(
-          "status"
-        );
-
-        return {
-          ...user.toObject(),
-          attendance,
-        };
-      })
+    const users = await UserModel.find({
+      isDeleted: false,
+      isActive: true,
+    }).select(
+      "-passwordSetupToken -passwordSetupExpires -updatedAt -createdAt -isDeleted -isActive"
     );
 
     res.status(200).json({
       success: true,
-      users: usersWithAttendance,
+      count: users.length,
+      data: users,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to fetch users",
+      error: error.message,
     });
   }
 };
-
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -298,5 +320,26 @@ export const deleteUser = async (req, res) => {
   } catch (error) {
     console.error("deleteUser error:", error);
     return res.status(500).json({ msg: "Server error" });
+  }
+};
+export const getBlockedUser = async (req, res) => {
+  try {
+    const users = await UserModel.find({
+      isActive: false,
+      isDeleted: false,
+    }).select(
+      "-passwordSetupToken -passwordSetupExpires -updatedAt -createdAt -isDeleted -isActive"
+    );
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch blocked users",
+      error: e.message,
+    });
   }
 };

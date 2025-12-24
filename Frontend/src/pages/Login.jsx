@@ -28,9 +28,19 @@ const Login = () => {
         password: formdata.password,
       });
       setIsAuth(true);
-      // console.log(res.user);
-      setUser(res.data.user);
 
+      setUser(res.data.user);
+      setTimeout(() => {
+        if (user.role === "employee") {
+          navigate("/dashboard");
+        }
+        if (user.role === "manager") {
+          navigate("/manager");
+        }
+        if (user.role === "owner") {
+          navigate("/owner");
+        }
+      }, 1000);
       // toast.success("Login successful");
       navigate("/dashboard");
       // console.log(res.data);

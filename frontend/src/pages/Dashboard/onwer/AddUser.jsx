@@ -35,7 +35,6 @@ const AddUser = ({ onClose }) => {
       return;
     }
     const toastId = toast.loading("Creating user...");
-    console.log(form);
     try {
       setLoading(true);
       setError(null);
@@ -45,7 +44,7 @@ const AddUser = ({ onClose }) => {
         id: toastId,
       });
       setTimeout(() => {
-        navigate("/admin/users");
+        navigate("/owner/users");
       }, 2000);
     } catch (err) {
       console.error(err);
@@ -78,6 +77,7 @@ const AddUser = ({ onClose }) => {
               value={form.username}
               onChange={handleChange}
               type="text"
+              disabled={loading}
               placeholder="Umaid Hamid"
               className="mt-1 w-full border rounded-lg px-4 py-2"
             />
@@ -92,6 +92,7 @@ const AddUser = ({ onClose }) => {
               value={form.email}
               onChange={handleChange}
               type="email"
+              disabled={loading}
               placeholder="umaid@gmail.com"
               className="mt-1 w-full border rounded-lg px-4 py-2"
             />
@@ -106,6 +107,7 @@ const AddUser = ({ onClose }) => {
               type="text"
               inputMode="numeric"
               name="phone"
+              disabled={loading}
               value={form.phone}
               onChange={handleChange}
               placeholder="91XXXXXXXXXX"
@@ -121,6 +123,7 @@ const AddUser = ({ onClose }) => {
             <select
               name="payment"
               value={form.payment}
+              disabled={loading}
               onChange={handleChange}
               className="mt-1 w-full border rounded-lg px-4 py-2 bg-white"
             >

@@ -1,4 +1,3 @@
-
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../axios/axios.js";
@@ -7,6 +6,9 @@ import { AuthContext } from "../../ContextApi/isAuth.jsx";
 const Topbar = () => {
   const { user, isAuth, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  if (!user) {
+    return null;
+  }
   console.log(user.email);
   const LogoutHandler = async () => {
     try {
@@ -21,7 +23,9 @@ const Topbar = () => {
     <div className="w-full bg-white shadow-lg rounded-xl  mt-6 px-10 py-4 flex items-center justify-between  ">
       <h3 className="text-lg font-semibold text-gray-800">
         Welcome,{" "}
-        <span className="text-blue-600 text-2xl">{user.username || "User"}</span>
+        <span className="text-blue-600 text-2xl">
+          {user.username || "User"}
+        </span>
       </h3>
 
       <div className="flex items-center gap-4">

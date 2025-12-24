@@ -34,14 +34,14 @@ const AdminHome = () => {
             title="Manage Users"
             description="View, update, or deactivate users"
             color="border-green-600"
-            onClick={() => navigate("/admin/users")}
+            onClick={() => navigate("/owner/users")}
           />
 
           <ActionCard
             title="Attendance"
             description="View and manage attendance records"
             color="border-purple-600"
-            onClick={() => navigate("/admin/attendance")}
+            onClick={() => navigate("/owner/attendance")}
           />
         </div>
       </div>

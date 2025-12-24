@@ -16,6 +16,11 @@ import Users from "./pages/Dashboard/onwer/Users.jsx";
 import AdminAttendance from "./pages/Dashboard/onwer/AdminAttendance.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import { Toaster } from "react-hot-toast";
+import ManagerDashboard from "./pages/ManagerDashboard.jsx";
+import ManagerHome from "./pages/Dashboard/Manager/ManagerHome.jsx";
+import ManagerEmployees from "./pages/Dashboard/Manager/Employees.jsx";
+import MakeAttendance from "./pages/Dashboard/Manager/MakeAttendance.jsx";
+import UserHomeDashboard from "./pages/Dashboard/User/UserHome.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -41,22 +46,49 @@ const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={["employee"]}>
         <Userdashboard />
       </ProtectedRoute>
     ),
     children: [
+      {
+        index: true,
+        element: <UserHomeDashboard />,
+      },
       {
         path: "attendance",
         element: <Attendance />,
       },
     ],
   },
+  {
+    path: "/manager",
+    element: (
+      <ProtectedRoute allowedRoles={["manager"]}>
+        <ManagerDashboard />
+      </ProtectedRoute>
+    ),
+
+    children: [
+      {
+        index: true,
+        element: <ManagerHome />,
+      },
+      {
+        path: "attendance",
+        element: <MakeAttendance />,
+      },
+      {
+        path: "employees",
+        element: <ManagerEmployees />,
+      },
+    ],
+  },
 
   {
-    path: "/admin",
+    path: "/owner",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={["owner"]}>
         <AdminDashboard />
       </ProtectedRoute>
     ),
@@ -65,18 +97,14 @@ const router = createBrowserRouter([
         index: true,
         element: <AdminHome />,
       },
-      // {
-      //   path: "add",
-      //   element: <AddUser />,
-      // },
+
       {
         path: "users",
-        // element: <Users />,
-        element: <Users/>,
+        element: <Users />,
       },
       {
         path: "attendance",
-        element: <AdminAttendance />,
+        element: <MakeAttendance />,
       },
     ],
   },
@@ -90,13 +118,13 @@ const router = createBrowserRouter([
 const App = () => {
   return (
     <>
-      {" "}
+    
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
           style: {
-            maxWidth: "420px", // ✅ prevents squeeze
+            maxWidth: "420px",
             overflow: "hidden",
             background: "#0f172a",
             color: "#fff",

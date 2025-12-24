@@ -159,6 +159,10 @@ export const disableaccount = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    if (user.role === "admin") {
+      console.log("admin");
+      return res.status(404).json({ message: "Admin cant deleted" });
+    }
     user.isActive = false;
     await user.save();
 
@@ -272,6 +276,7 @@ export const getAllUsers = async (req, res) => {
     const users = await UserModel.find({
       isDeleted: false,
       isActive: true,
+      role:"employee"
     }).select(
       "-passwordSetupToken -passwordSetupExpires -updatedAt -createdAt -isDeleted -isActive"
     );
@@ -292,13 +297,10 @@ export const getAllUsers = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // 🔹 Validate id
     if (!id) {
       return res.status(400).json({ msg: "User id is required" });
     }
 
-    // 🔹 Find user
     const user = await UserModel.findById(id);
 
     if (!user) {

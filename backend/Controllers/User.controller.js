@@ -306,7 +306,6 @@ export const resetpassword = async (req, res) => {
     await sendSetPasswordEmail(email, resetUrl);
     user.passwordSetupToken = passwordToken;
     user.passwordSetupExpires = new Date(Date.now() + 30 * 60 * 1000);
-    user.isActive = false;
     await user.save();
 
     res

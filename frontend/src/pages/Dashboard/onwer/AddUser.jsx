@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../axios/axios";
 import toast from "react-hot-toast";
-const AddUser = () => {
+const AddUser = ({ onClose }) => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -41,7 +41,7 @@ const AddUser = () => {
       setError(null);
 
       const response = await api.post("/owner/create", form);
-      toast.success("User created successfully 🎉", {
+      toast.success("User created successfully ", {
         id: toastId,
       });
       setTimeout(() => {
@@ -147,9 +147,8 @@ const AddUser = () => {
           {/* Actions */}
           <div className="flex justify-end gap-4 pt-4">
             <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-6 py-2 rounded-lg border"
+              onClick={onClose}
+              className="mt-4 px-4 py-2 bg-gray-200 rounded"
             >
               Cancel
             </button>

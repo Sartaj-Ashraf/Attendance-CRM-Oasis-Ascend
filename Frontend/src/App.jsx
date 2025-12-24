@@ -11,7 +11,8 @@ import Attendance from "./pages/Dashboard/User/Attendance";
 import AdminHome from "./pages/Dashboard/onwer/AdminHome.jsx";
 import AddUser from "./pages/Dashboard/onwer/AddUser.jsx";
 
-import Users from "./pages/Dashboard/onwer/User.jsx";
+// import Users from "./pages/Dashboard/onwer/User.jsx";
+import Users from "./pages/Dashboard/onwer/Users.jsx";
 import AdminAttendance from "./pages/Dashboard/onwer/AdminAttendance.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import { Toaster } from "react-hot-toast";
@@ -64,13 +65,14 @@ const router = createBrowserRouter([
         index: true,
         element: <AdminHome />,
       },
-      {
-        path: "add",
-        element: <AddUser />,
-      },
+      // {
+      //   path: "add",
+      //   element: <AddUser />,
+      // },
       {
         path: "users",
-        element: <Users />,
+        // element: <Users />,
+        element: <Users/>,
       },
       {
         path: "attendance",

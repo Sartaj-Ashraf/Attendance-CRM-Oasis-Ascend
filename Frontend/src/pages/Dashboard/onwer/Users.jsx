@@ -1,68 +1,131 @@
-// src/pages/admin/Users.jsx
-import React, { useState } from "react";
-import UsersTable from "../../../components/admin/Userdetail";
-import ConfirmModal from "../../../components/confrim/ConfirmModal";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import api from "../../../axios/axios";
+import UserRow from "../../../components/admin/Userdetail";
+import ConfirmModal from "../../../components/confrim/ConfirmModal";
 
 const Users = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: "John Doe", email: "john@example.com", phone: "9876543210" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", phone: "9876543211" },
-  ]);
-
+  const [users, setUsers] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [actionType, setActionType] = useState(null);
+  const [actionType, setActionType] = useState(null); 
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get("/owner/getAllUsers");
+      setUsers(response.data.data || response.data);
+    } catch (e) {
+      toast.error("Failed to fetch users");
+    }
+  };
 
   // OPEN CONFIRM MODAL
   const openConfirm = (type, user) => {
-    setActionType(type); // "delete" or "block"
+    setActionType(type);
     setSelectedUser(user);
     setModalOpen(true);
   };
 
-  // CONFIRM MODAL ACTION
-  const handleConfirm = () => {
-    if (actionType === "delete") {
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
-      toast.success(`${selectedUser.name} deleted successfully`);
-    }
 
-    if (actionType === "block") {
-      toast.warning(`${selectedUser.name} blocked`);
-    }
+  const handleConfirm = async () => {
+    if (!selectedUser) return;
 
+    try {
+      setLoading(true);
+
+      if (actionType === "delete") {
+        await api.post(`/owner/deleteUser/${selectedUser._id}`);
+
+        setUsers((prev) =>
+          prev.filter((u) => u._id !== selectedUser._id)
+        );
+
+        toast.success("User deleted");
+      }
+
+      if (actionType === "block") {
+        await api.patch(`owner/disableaccount/${selectedUser._id}`);
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u._id !== selectedUser._id
+              ? { ...u, isActive: false }
+              : u
+          )
+        );
+
+        toast.warning("User blocked");
+      }
+    } catch (e) {
+      toast.error("Action failed");
+    } finally {
+      closeModal();
+    }
+  };
+
+  const closeModal = () => {
     setModalOpen(false);
     setSelectedUser(null);
     setActionType(null);
+    setLoading(false);
   };
-
-  // CANCEL MODAL
-  const handleCancel = () => {
-    setModalOpen(false);
-    setSelectedUser(null);
-    setActionType(null);
-  };
-
+console.log(users)
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Users</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        Users
+      </h1>
 
-      <UsersTable
-        users={users}
-        onEdit={(user) => toast.success(`Edit ${user.name}`)}
-        onBlock={(user) => openConfirm("block", user)}
-        onDelete={(user) => openConfirm("delete", user)}
-      />
+      <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-gray-100 text-gray-700">
+            <tr>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Email</th>
+              <th className="px-6 py-3">Phone</th>
+              <th className="px-6 py-3">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="text-center py-6 text-gray-500">
+                  No users found
+                </td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <UserRow
+                  key={user._id}
+                  user={user}
+                  onEdit={() => toast.info("Edit coming soon")}
+                  onBlock={() => openConfirm("block", user)}
+                  onDelete={() => openConfirm("delete", user)}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {modalOpen && selectedUser && (
         <ConfirmModal
-          title={actionType === "delete" ? "Delete User" : "Block User"}
+          title={
+            actionType === "delete" ? "Delete User" : "Block User"
+          }
           message={`Are you sure you want to ${
             actionType === "delete" ? "delete" : "block"
-          } ${selectedUser.name}?`}
+          } ${selectedUser.username}?`}
           onConfirm={handleConfirm}
-          onCancel={handleCancel}
+          onCancel={closeModal}
+          loading={loading}
         />
       )}
     </div>

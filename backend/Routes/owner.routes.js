@@ -17,12 +17,12 @@ import {
 } from "../Controllers/attendence.controller.js";
 router.post("/create", authMiddleware, isAdmin, createUser);
 router.post("/edituser/:id", authMiddleware, isAdmin, editUser);
-router.post("/disableaccount/:id", authMiddleware, isAdmin, disableaccount);
+router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount);
 router.post("/activateaccount/:id", authMiddleware, isAdmin, activateaccount);
 router.post("/asignrole/:id", authMiddleware, isAdmin, assignRole);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
 router.post("/attendance/bulk", authMiddleware, markBulkAttendance);
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);
-router.post("/getAllUsers", authMiddleware, isAdmin, getAllUsers);
+router.get("/getAllUsers", authMiddleware, isAdmin, getAllUsers);
 router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 export default router;

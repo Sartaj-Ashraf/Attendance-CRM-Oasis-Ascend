@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AddUser from "./AddUser";
 
 const AdminHome = () => {
+  const [showAddUser, setShowAddUser] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -20,15 +23,13 @@ const AdminHome = () => {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Add User */}
           <ActionCard
             title="Add User"
             description="Create a new employee or admin account"
             color="border-blue-600"
-            onClick={() => navigate("/admin/add")}
+            onClick={() => setShowAddUser(true)}
           />
 
-          {/* View Users */}
           <ActionCard
             title="Manage Users"
             description="View, update, or deactivate users"
@@ -36,7 +37,6 @@ const AdminHome = () => {
             onClick={() => navigate("/admin/users")}
           />
 
-          {/* Attendance */}
           <ActionCard
             title="Attendance"
             description="View and manage attendance records"
@@ -45,6 +45,21 @@ const AdminHome = () => {
           />
         </div>
       </div>
+
+      {/* Modal */}
+      {showAddUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-xl relative">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+              onClick={() => setShowAddUser(false)}
+            >
+              ✕
+            </button>
+            <AddUser onClose={() => setShowAddUser(false)} />
+          </div>
+        </div>
+      )}
 
       {/* Info Section */}
       <div className="bg-white shadow rounded-xl p-6">

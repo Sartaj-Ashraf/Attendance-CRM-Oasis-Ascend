@@ -7,9 +7,7 @@ const AdminHome = () => {
     <div className="space-y-8">
       {/* Welcome Card */}
       <div className="bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Welcome, Admin 👋
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-800">Welcome, Admin 👋</h1>
         <p className="text-gray-500 mt-2">
           Manage users, attendance, and system settings from here.
         </p>
@@ -27,7 +25,7 @@ const AdminHome = () => {
             title="Add User"
             description="Create a new employee or admin account"
             color="border-blue-600"
-            onClick={() => navigate("/admin/users/add")}
+            onClick={() => navigate("/admin/add")}
           />
 
           {/* View Users */}
@@ -64,7 +62,6 @@ const AdminHome = () => {
   );
 };
 
-/* 🔹 Reusable Action Card */
 const ActionCard = ({ title, description, color, onClick }) => {
   return (
     <div
@@ -72,12 +69,8 @@ const ActionCard = ({ title, description, color, onClick }) => {
       className={`bg-white shadow rounded-xl p-6 border-l-4 ${color}
                   cursor-pointer hover:shadow-xl transition`}
     >
-      <h3 className="text-lg font-semibold text-gray-800">
-        {title}
-      </h3>
-      <p className="text-gray-500 mt-2 text-sm">
-        {description}
-      </p>
+      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+      <p className="text-gray-500 mt-2 text-sm">{description}</p>
     </div>
   );
 };

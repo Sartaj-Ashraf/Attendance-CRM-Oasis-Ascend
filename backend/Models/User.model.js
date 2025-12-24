@@ -21,7 +21,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
-
+    phone: {
+      type: String,
+      required: true,
+      match: [/^[0-9]{10}$/, "Please enter a valid phone number"],
+    },
     role: {
       type: String,
       enum: ["admin", "employee"],
@@ -39,12 +43,12 @@ const userSchema = new mongoose.Schema(
 
     isActive: {
       type: Boolean,
+      default: true,
+    },
+    isDeleted: {
+      type: Boolean,
       default: false,
     },
-isDeleted:{
-  type:Boolean,
-  default:false
-},
     passwordSetupToken: String,
     passwordSetupExpires: Date,
   },

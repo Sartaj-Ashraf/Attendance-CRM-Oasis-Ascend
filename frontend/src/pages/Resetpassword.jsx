@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-
+import React, { useState } from "react";
+import api from "../axios/axios.js";
+import toast from "react-hot-toast";
 const Resetpassword = () => {
   const [data, setData] = useState("");
 
@@ -7,8 +8,26 @@ const Resetpassword = () => {
     setData(e.target.value);
   };
 
-  const submithandler = () => {
-    console.log(data);
+  const submitHandler = async () => {
+    const toastId = toast.loading("Sending reset link to provided email...");
+
+    try {
+      const response = await api.post("user/resetpassword", {
+        email: data,
+      });
+
+      toast.success(response.data.msg, {
+        id: toastId,
+        icon: false,
+      });
+    } catch (error) {
+      const message = error.response?.data?.msg || "Something went wrong";
+
+      toast.error(message, {
+        id: toastId,
+        icon: false,
+      });
+    }
   };
 
   return (
@@ -28,7 +47,7 @@ const Resetpassword = () => {
         />
 
         <button
-          onClick={submithandler}
+          onClick={submitHandler}
           className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold"
         >
           Submit
@@ -39,4 +58,3 @@ const Resetpassword = () => {
 };
 
 export default Resetpassword;
-

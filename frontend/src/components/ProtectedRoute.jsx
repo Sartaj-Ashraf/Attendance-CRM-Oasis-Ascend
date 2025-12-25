@@ -14,9 +14,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // 2️⃣ Not logged in
   if (!isAuth) {
     return <Navigate to="/login" replace />;
-  }
-
-  // 3️⃣ Role check (VERY IMPORTANT)
+  }console.log(allowedRoles)
+ 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }

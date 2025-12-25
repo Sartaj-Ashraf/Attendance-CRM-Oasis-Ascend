@@ -4,6 +4,7 @@ import api from "../axios/axios.js";
 import axios from "axios";
 export const AuthContext = createContext(null);
 
+
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuth, setIsAuth] = useState(false);
@@ -15,7 +16,7 @@ const AuthProvider = ({ children }) => {
         const res = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/isAuth`,
           {
-            withCredentials: true, // 🔥 IMPORTANT
+            withCredentials: true, 
           }
         );
         setUser(res.data.user);

@@ -118,11 +118,10 @@ const router = createBrowserRouter([
 const App = () => {
   return (
     <>
-    
       <Toaster
         position="top-right"
         toastOptions={{
-          duration: 4000,
+          duration: 3000,
           style: {
             maxWidth: "420px",
             overflow: "hidden",
@@ -134,7 +133,7 @@ const App = () => {
           },
           success: {
             style: {
-              border: "1px solid #22c55e",
+              border: "2px solid #22c55e",
             },
             iconTheme: {
               primary: "#22c55e",
@@ -143,10 +142,9 @@ const App = () => {
           },
           error: {
             style: {
-              border: "1px solid #ef4444",
+              border: "2px solid #ef4444",
             },
             iconTheme: {
-              width: "500px",
               primary: "#ef4444",
               secondary: "#fef2f2",
             },

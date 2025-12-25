@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import api from "../axios/axios.js";
 import axios from "axios";
 import { AuthContext } from "../ContextApi/isAuth.jsx";
-
+import toast from "react-hot-toast";
 const Login = () => {
-  const { setUser, setIsAuth } = useContext(AuthContext);
+  const { user, setUser, setIsAuth } = useContext(AuthContext);
 
   const [formdata, setFormdata] = useState({
-    email: "est@12",
+    email: "asif@",
     password: "umaidk",
   });
 
@@ -23,29 +23,30 @@ const Login = () => {
 
   const submitDetails = async () => {
     try {
-      const res = await api.post("/user/login", {
+      const { data } = await api.post("/user/login", {
         email: formdata.email,
         password: formdata.password,
       });
-      setIsAuth(true);
+      await setIsAuth(true);
 
-      setUser(res.data.user);
+      await setUser(data.user);
+      toast.success("Login successful!", { icon: false });
       setTimeout(() => {
-        if (user.role === "employee") {
+        if (data.user.role == "employee") {
           navigate("/dashboard");
         }
-        if (user.role === "manager") {
+        if (data.user.role == "manager") {
           navigate("/manager");
         }
-        if (user.role === "owner") {
+        if (data.user.role == "owner") {
           navigate("/owner");
         }
-      }, 1000);
-      // toast.success("Login successful");
-      navigate("/dashboard");
-      // console.log(res.data);
+      }, 1500);
     } catch (error) {
-      console.log(error);
+      const message = error.response?.data?.msg || "Something went wrong";
+      toast.error(message, {
+        icon: false,
+      });
     }
   };
   console.log(import.meta.env.VITE_BACKEND_URL);

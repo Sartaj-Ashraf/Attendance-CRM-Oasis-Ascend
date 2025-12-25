@@ -106,7 +106,7 @@ export const loginUser = async (req, res) => {
 
     const user = await UserModel.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(404).json({ msg: "User does not exist" });
+      return res.status(404).json({ msg: "We Could Find Username" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -120,8 +120,9 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({
         success: false,
         msg: "You are no longer a member of the society.",
-      });}
-   
+      });
+    }
+
     const userData = {
       _id: user._id,
       username: user.username,
@@ -297,25 +298,46 @@ export const getAttendanceSummary = async (req, res) => {
 export const resetpassword = async (req, res) => {
   try {
     let { email } = req.body;
-    if (!email) return res.status(400).json("Email is Required");
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        msg: "Email is required",
+      });
+    }
+
     email = email.toLowerCase();
+
     const user = await UserModel.findOne({ email });
-    if (!user) return res.status(401).json("user does't exists");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        msg: "User does not exist",
+      });
+    }
+
     const passwordToken = generatePasswordToken();
     const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordToken}`;
+
     await sendSetPasswordEmail(email, resetUrl);
+
     user.passwordSetupToken = passwordToken;
     user.passwordSetupExpires = new Date(Date.now() + 30 * 60 * 1000);
     await user.save();
 
-    res
-      .status(200)
-      .json({ message: "Password reset link sent to email", resetUrl });
+    return res.status(200).json({
+      success: true,
+      msg: "Password reset link sent to email",
+    });
   } catch (error) {
     console.error("Reset Password Error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
   }
 };
+
 export const logout = (req, res) => {
   try {
     res.clearCookie("AttendenceToken", {

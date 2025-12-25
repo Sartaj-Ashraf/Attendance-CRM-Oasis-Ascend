@@ -8,7 +8,6 @@ const Userdashboard = () => {
       <Sidebar />
 
       <div className="flex-1">
-        <Topbar />
         <div className="p-8">
           <Outlet /> {/* 👈 renders Attendance, Salary, etc */}
         </div>

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const MakeAttendance = () => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const navigate=useNavigate()
 
   const [search, setSearch] = useState("");
 
@@ -124,6 +126,12 @@ const MakeAttendance = () => {
                         {status}
                       </button>
                     ))}
+                  </td>
+                  <td>
+                    <button
+            onClick={()=>{navigate("/test2")}}className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+              View Attendance Details
+            </button>
                   </td>
                 </tr>
               ))

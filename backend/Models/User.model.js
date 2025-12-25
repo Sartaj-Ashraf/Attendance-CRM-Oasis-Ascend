@@ -21,23 +21,39 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
+
     phone: {
       type: String,
       required: true,
       match: [/^[0-9]{10}$/, "Please enter a valid phone number"],
     },
+
     role: {
       type: String,
       enum: ["owner", "employee", "manager"],
       default: "employee",
+      index: true,
     },
 
-    // 🔹 PAYMENT ELIGIBILITY
     payment: {
       type: String,
       enum: ["paid", "unpaid"],
-      default: "paid", // employees are paid by default
+      default: "paid",
       lowercase: true,
+      index: true,
+    },
+
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true,
+      index: true,
+    },
+
+    // ✅ Reporting Manager
+    reportingManager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       index: true,
     },
 
@@ -45,14 +61,19 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
     isDeleted: {
       type: Boolean,
       default: false,
     },
+
     passwordSetupToken: String,
     passwordSetupExpires: Date,
   },
   { timestamps: true }
 );
+
+// Helpful index
+userSchema.index({ department: 1, reportingManager: 1 });
 
 export default mongoose.model("User", userSchema);

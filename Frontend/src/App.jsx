@@ -23,14 +23,16 @@ import MakeAttendance from "./pages/Dashboard/Manager/MakeAttendance.jsx";
 import UserHomeDashboard from "./pages/Dashboard/User/UserHome.jsx";
 import Departments from "./pages/Dashboard/onwer/Departments.jsx";
 import AttendanceDetails from "./pages/Dashboard/onwer/AttendanceDetails.jsx";
+import Allmanagers from "./pages/Dashboard/onwer/Allmanagers.jsx";
+import BlockedUsers from "./pages/Dashboard/onwer/BlockedUsers.jsx";
 const router = createBrowserRouter([
   {
-    path:"/test",
-    element:<Departments/>
+    path: "/test",
+    element: <Departments />,
   },
   {
-    path:"/test2",
-    element:<AttendanceDetails/>
+    path: "/test2",
+    element: <AttendanceDetails />,
   },
   {
     path: "/",
@@ -115,6 +117,18 @@ const router = createBrowserRouter([
       {
         path: "attendance",
         element: <MakeAttendance />,
+      },
+      {
+        path: "managers",
+        element: <Allmanagers />,
+      },
+      {
+        path: "department",
+        element: <Departments />,
+      },
+      {
+        path: "block-users",
+        element: <BlockedUsers />,
       },
     ],
   },

@@ -94,7 +94,12 @@ const AdminSidebar = () => {
       <div className="bg-white h-full rounded-2xl shadow-lg flex flex-col">
         <div className="px-6 py-5 border-b">
           <h2 className="text-xl font-bold text-gray-800 tracking-wide">
-            Admin
+             <NavLink
+            to="/owner"
+         
+          >
+            Admin Home
+          </NavLink>
           </h2>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
@@ -111,7 +116,7 @@ const AdminSidebar = () => {
             Users
           </NavLink>
             <NavLink
-            to="/admin/managers"
+            to="/owner/managers"
             className={({ isActive }) =>
               `block bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium transition ${
                 isActive
@@ -136,7 +141,7 @@ const AdminSidebar = () => {
             Attendance
           </NavLink>
             <NavLink
-            to="/test"
+            to="/owner/department"
             className={({ isActive }) =>
               `block bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium transition ${
                 isActive

@@ -21,7 +21,17 @@ import ManagerHome from "./pages/Dashboard/Manager/ManagerHome.jsx";
 import ManagerEmployees from "./pages/Dashboard/Manager/Employees.jsx";
 import MakeAttendance from "./pages/Dashboard/Manager/MakeAttendance.jsx";
 import UserHomeDashboard from "./pages/Dashboard/User/UserHome.jsx";
+import Departments from "./pages/Dashboard/onwer/Departments.jsx";
+import AttendanceDetails from "./pages/Dashboard/onwer/AttendanceDetails.jsx";
 const router = createBrowserRouter([
+  {
+    path:"/test",
+    element:<Departments/>
+  },
+  {
+    path:"/test2",
+    element:<AttendanceDetails/>
+  },
   {
     path: "/",
     element: <Login />,

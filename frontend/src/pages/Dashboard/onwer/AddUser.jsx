@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../axios/axios";
 import toast from "react-hot-toast";
+
 const AddUser = ({ onClose }) => {
   const navigate = useNavigate();
 
@@ -11,43 +12,45 @@ const AddUser = ({ onClose }) => {
     phone: "",
     payment: "paid",
     role: "employee",
+    department: "",
   });
 
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // 🔹 Handle input change
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await api.get("/department/get");
+        setDepartments(res.data.data || res.data);
+      } catch {
+        toast.error("Failed to load departments");
+      }
+    };
+    fetchDepartments();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 🔹 Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.username || !form.email || !form.phone) {
+    const { username, email, phone, department } = form;
+    if (!username || !email || !phone || !department) {
       toast.error("All fields are required");
       return;
     }
+
     const toastId = toast.loading("Creating user...");
     try {
       setLoading(true);
-      setError(null);
-
-      const response = await api.post("/owner/create", form);
-      toast.success("User created successfully ", {
-        id: toastId,
-      });
-      setTimeout(() => {
-        navigate("/owner/users");
-      }, 2000);
+      await api.post("/owner/create", form);
+      toast.success("User created successfully", { id: toastId });
+      setTimeout(() => navigate("/owner/users"), 1500);
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.message || "Failed to create user", {
         id: toastId,
       });
@@ -57,101 +60,81 @@ const AddUser = ({ onClose }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white shadow-lg rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New User</h2>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-            {error}
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Add New User</h2>
+        <p className="text-gray-500 mb-6">
+          Fill in the details to create a new employee
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
-            <input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              type="text"
-              disabled={loading}
-              placeholder="Umaid Hamid"
-              className="mt-1 w-full border rounded-lg px-4 py-2"
-            />
-          </div>
+          {/* Username */}
+          <input
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            placeholder="Username"
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              type="email"
-              disabled={loading}
-              placeholder="umaid@gmail.com"
-              className="mt-1 w-full border rounded-lg px-4 py-2"
-            />
-          </div>
+          {/* Email */}
+          <input
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Email"
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
 
           {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              name="phone"
-              disabled={loading}
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="91XXXXXXXXXX"
-              className="mt-1 w-full border rounded-lg px-4 py-2"
-            />
-          </div>
+          <input
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            placeholder="Phone"
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+
+          {/* Department */}
+          <select
+            name="department"
+            value={form.department}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Select Department</option>
+            {departments.map((dept) => (
+              <option key={dept._id} value={dept._id}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
 
           {/* Payment */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Payment
-            </label>
-            <select
-              name="payment"
-              value={form.payment}
-              disabled={loading}
-              onChange={handleChange}
-              className="mt-1 w-full border rounded-lg px-4 py-2 bg-white"
-            >
-              <option value="paid">Paid</option>
-              <option value="unpaid">Unpaid</option>
-            </select>
-          </div>
+          <select
+            name="payment"
+            value={form.payment}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+          </select>
 
           {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Role
-            </label>
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              className="mt-1 w-full border rounded-lg px-4 py-2 bg-white"
-            >
-              <option value="employee">Employee</option>
-            </select>
-          </div>
+          <input
+            value="Employee"
+            disabled
+            className="w-full border rounded-lg px-4 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
+          />
 
-          {/* Actions */}
-          <div className="flex justify-end gap-4 pt-4">
+          {/* Buttons */}
+          <div className="flex justify-end gap-4 pt-6">
             <button
+              type="button"
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-gray-200 rounded"
+              className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
             >
               Cancel
             </button>
@@ -159,7 +142,7 @@ const AddUser = ({ onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50"
+              className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
             >
               {loading ? "Creating..." : "Add User"}
             </button>

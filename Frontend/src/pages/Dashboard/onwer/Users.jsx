@@ -19,8 +19,8 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await api.get("/owner/getAllUsers");
-      setUsers(response.data.data || response.data);
+      const response = await api.get("/owner/getAllEmployee");
+      setUsers(response.data.employees); // ✅ correct
     } catch (e) {
       toast.error("Failed to fetch users");
     }

@@ -14,6 +14,7 @@ import morgan from "morgan";
 import userRouter from "./Routes/user.routes.js";
 import ownerRoute from "./Routes/owner.routes.js";
 import commonRoute from "./Routes/common.routes.js";
+import departmentRoute from "./Routes/department.routes.js";
 import { seed } from "./seed/seedStatus.js";
 import { generateAttendances } from "./seed/tempUser.js";
 connectDB();
@@ -44,6 +45,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.use("/user", userRouter);
 app.use("/owner", ownerRoute);
+app.use("/department", departmentRoute);
 app.use("/api", commonRoute);
 // auth middleware
 

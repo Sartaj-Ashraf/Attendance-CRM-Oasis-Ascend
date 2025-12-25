@@ -1,65 +1,86 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-// import  from "../models/User.model.js";
 import UserModel from "../Models/User.model.js";
+import DepartmentModel from "../Models/Department.model.js";
 import nodemailer from "nodemailer";
 import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
+
 export const createUser = async (req, res) => {
   try {
-    let { username, email, role, payment, phone } = req.body;
-    if (!username || !email || !role || !payment || !phone) {
+    let { username, email, payment, phone, department } = req.body;
+
+    // 1️⃣ Validation
+    if (!username || !email || !payment || !phone || !department) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    username = username?.toLowerCase();
-    email = email?.toLowerCase();
-    role = role?.toLowerCase();
-    payment = payment?.toLowerCase();
-    // 1. Validation
-    if (role !== "employee") {
-      return res.status(400).json({
-        message: "Only employee accounts can be created",
+
+    username = username.toLowerCase();
+    email = email.toLowerCase();
+    payment = payment.toLowerCase();
+
+    // 2️⃣ Find department by NAME
+    const departmentDoc = await DepartmentModel.findOne({
+      name: department.toUpperCase(),
+    });
+
+    if (!departmentDoc) {
+      return res.status(404).json({
+        message: "Department does not exist",
       });
     }
-    // 2. Check if user already exists
+
+    const departmentId = departmentDoc._id; // ✅ ObjectId
+
+    // 3️⃣ Check existing user
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    // 3. Generate temporary password & token
-    const tempPassword = crypto.randomBytes(6).toString("hex");
-    const passwordSetupToken = crypto.randomBytes(20).toString("hex");
+    // 4️⃣ Check if department already has users
+    const departmentUser = await UserModel.findOne({
+      department: departmentId,
+      isDeleted: false,
+    });
 
-    // 4. Hash password
+    let finalRole = "employee";
+    let reportingManager = null;
+
+    // 5️⃣ First user → Manager
+    if (!departmentUser) {
+      finalRole = "manager";
+    } else {
+      const manager = await UserModel.findOne({
+        role: "manager",
+        department: departmentId,
+        isActive: true,
+        isDeleted: false,
+      });
+
+      if (!manager) {
+        return res.status(400).json({
+          message: "Department has no active manager",
+        });
+      }
+
+      reportingManager = manager._id;
+    }
+
+    // 6️⃣ Password
+    const passwordSetupToken = crypto.randomBytes(20).toString("hex");
+    const tempPassword = crypto.randomBytes(6).toString("hex");
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    // 5. Create user
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-    const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordSetupToken}`;
-    await transporter.sendMail({
-      to: email,
-      subject: "Set your password",
-      html: `
-    <h3>Welcome to Attendance System</h3>
-    <p>Click the link below to set your password:</p>
-    <a href="${resetUrl}">Set Password</a>
-    <p>This link will expire in 30 minutes.</p>
-  `,
-    });
+    // 7️⃣ Create user
     const newUser = await UserModel.create({
       username,
       email,
-      role,
-      payment,
       phone,
+      payment,
+      department: departmentId, // ✅ ObjectId
+      role: finalRole,
+      reportingManager,
       password: hashedPassword,
       passwordSetupToken,
       passwordSetupExpires: Date.now() + 60 * 60 * 1000,
@@ -69,19 +90,19 @@ export const createUser = async (req, res) => {
       message: "User created successfully",
       user: {
         id: newUser._id,
-        userName: newUser.userName,
+        username: newUser.username,
         email: newUser.email,
-        payment,
-        isActive: newUser.isActive,
         role: newUser.role,
-        url: resetUrl,
+        department: departmentDoc.name,
+        reportingManager: reportingManager || "SELF",
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Create user error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 export const editUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -271,15 +292,26 @@ export const assignRole = async (req, res) => {
 //   }
 // };
 
-export const getAllUsers = async (req, res) => {
+export const getAllDepartmentUser = async (req, res) => {
   try {
+    const { department } = req.query; // ✅ from query
+
+    if (!department) {
+      return res.status(400).json({
+        success: false,
+        message: "Department id is required",
+      });
+    }
+
     const users = await UserModel.find({
+      department, // ✅ filter by department ObjectId
       isDeleted: false,
       isActive: true,
-      role:"employee"
-    }).select(
-      "-passwordSetupToken -passwordSetupExpires -updatedAt -createdAt -isDeleted -isActive"
-    );
+      role: "employee",
+    })
+      .select("-password -passwordSetupToken -passwordSetupExpires")
+      .populate("department", "name")
+      .populate("reportingManager", "username email");
 
     res.status(200).json({
       success: true,
@@ -294,6 +326,7 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -343,5 +376,65 @@ export const getBlockedUser = async (req, res) => {
       message: "Failed to fetch blocked users",
       error: e.message,
     });
+  }
+};
+export const GetAllEmployee = async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id; // from auth middleware
+
+    const employees = await UserModel.find({
+      _id: { $ne: loggedInUserId }, // ❌ exclude self
+      role: "employee",
+      isDeleted: false,
+      isActive: true,
+    })
+      .select("-password")
+      .populate("department", "name")
+      .populate("reportingManager", "username email");
+
+    res.status(200).json({
+      count: employees.length,
+      employees,
+    });
+  } catch (error) {
+    console.error("GetAllEmployee error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const GetManagers = async (req, res) => {
+  try {
+    const managers = await UserModel.find({
+      role: "manager",
+      isDeleted: false,
+      isActive: true,
+    })
+      .select("-password -passwordSetupToken -passwordSetupExpires")
+      .populate("department", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: managers.length,
+      data: managers,
+    });
+  } catch (error) {
+    console.error("GetManagers error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch managers",
+    });
+  }
+};
+export const BlockedUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find({ isActive: false, isDeleted: false })
+      .select("-password -passwordSetupToken -passwordSetupExpires")
+      .populate("department", "name");
+    res.status(200).json({ success: true, count: users.length, data: users });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch blocked users" });
   }
 };

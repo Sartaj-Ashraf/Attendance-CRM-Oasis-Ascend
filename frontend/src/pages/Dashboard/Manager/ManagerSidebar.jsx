@@ -70,8 +70,11 @@ const ManagerSidebar = () => {
     <aside className="w-64 h-screen bg-gray-100 p-4">
       <div className="bg-white h-full rounded-2xl shadow-lg flex flex-col">
         <div className="px-6 py-5 border-b">
-          <h2 className="text-xl font-bold text-gray-800 tracking-wide">
-            Manager
+            <h2 className="text-xl font-bold text-gray-800 tracking-wide">
+             <NavLink
+            to="/manager">
+               Manager Home
+          </NavLink>
           </h2>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
@@ -88,7 +91,7 @@ const ManagerSidebar = () => {
             Users
           </NavLink>
           <NavLink
-            to="/admin/managers"
+            to="/test3"
             className={({ isActive }) =>
               `block bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium transition ${
                 isActive

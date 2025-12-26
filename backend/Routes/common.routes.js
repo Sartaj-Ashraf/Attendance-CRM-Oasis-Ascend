@@ -3,7 +3,7 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 const app = express();
 const router = express.Router();
 import UserModel from "../Models/User.model.js";
-
+import { getAttendanceByDate } from "../Controllers/attendence.controller.js";
 // router.get("/statuses", getAllStatuses);
 router.get("/isAuth", authMiddleware, async (req, res) => {
   const user = await UserModel.findById(req.user.id)
@@ -24,5 +24,5 @@ router.get("/isAuth", authMiddleware, async (req, res) => {
     },
   });
 });
-
+router.get("/GetAttendanceByDate", authMiddleware, getAttendanceByDate);
 export default router;

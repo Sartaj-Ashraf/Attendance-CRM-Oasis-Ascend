@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import api from "../../../axios/axios.js";
 
 const MakeAttendance = () => {
-  const navigate = useNavigate();
-
   /* ================= STATE ================= */
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
@@ -13,6 +10,8 @@ const MakeAttendance = () => {
 
   const [authUser, setAuthUser] = useState(null);
   const [employees, setEmployees] = useState([]);
+
+  // attendance: { userId: { status, note } }
   const [attendance, setAttendance] = useState({});
 
   /* ================= FETCH EMPLOYEES ================= */
@@ -20,23 +19,40 @@ const MakeAttendance = () => {
     try {
       let res;
 
-      // 🔐 OWNER
       if (user.role === "owner") {
         res = await api.get("/owner/getAllEmployee");
         setEmployees(res.data.employees);
       }
 
-      // 🔐 MANAGER
       if (user.role === "manager") {
         res = await api.get("/owner/getAllUsers", {
           params: { department: user.department._id },
         });
         setEmployees(res.data.data);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to load employees");
-    } finally {
-      setLoading(false); // ✅ ALWAYS stop loading
+    }
+  };
+
+  /* ================= FETCH ATTENDANCE ================= */
+  const fetchAttendanceByDate = async (selectedDate) => {
+    try {
+      const res = await api.get("/api/GetAttendanceByDate", {
+        params: { date: selectedDate },
+      });
+
+      const map = {};
+      res.data.data.forEach((row) => {
+        map[row.user._id] = {
+          status: row.status,
+          note: row.note || "",
+        };
+      });
+
+      setAttendance(map);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -44,17 +60,24 @@ const MakeAttendance = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const res = await api.get("/api/isAuth"); // ✅ FIXED
+        const res = await api.get("/api/isAuth");
         setAuthUser(res.data.user);
         await fetchEmployees(res.data.user);
-      } catch (error) {
+        await fetchAttendanceByDate(date);
+      } catch {
         toast.error("Authentication failed");
-        setLoading(false); // ✅ IMPORTANT
+      } finally {
+        setLoading(false);
       }
     };
-
     init();
   }, []);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      fetchAttendanceByDate(date);
+    }
+  }, [date]);
 
   /* ================= FILTER ================= */
   const filteredEmployees = useMemo(() => {
@@ -63,68 +86,77 @@ const MakeAttendance = () => {
     );
   }, [employees, search]);
 
-  /* ================= ACTIONS ================= */
-  const markAttendance = (userId, status) => {
+  /* ================= UPDATE STATUS ================= */
+  const markAttendance = async (userId, status) => {
+    const note = attendance[userId]?.note || "";
+
+    try {
+      setAttendance((prev) => ({
+        ...prev,
+        [userId]: { status, note },
+      }));
+
+      await api.post("/owner/markattendence", {
+        userId,
+        status,
+        note,
+      });
+
+      toast.success("Attendance updated");
+    } catch {
+      toast.error("Failed to update attendance");
+    }
+  };
+
+  /* ================= UPDATE NOTE ================= */
+  const updateNote = (userId, note) => {
     setAttendance((prev) => ({
       ...prev,
-      [userId]: status,
+      [userId]: {
+        status: prev[userId]?.status || "",
+        note,
+      },
     }));
   };
 
-  const markAllPresent = () => {
-    const all = {};
-    employees.forEach((emp) => {
-      all[emp._id] = "present";
-    });
-    setAttendance(all);
-    toast.success("All marked present");
-  };
-
-  /* ================= SUBMIT ================= */
+  /* ================= BULK MORNING ================= */
   const submitAttendance = async () => {
-    console.group("📌 SUBMIT ATTENDANCE");
+    const records = employees
+      .filter((emp) => !attendance[emp._id]?.status)
+      .map((emp) => ({
+        userId: emp._id,
+        status: "present",
+      }));
 
-    // console.log("📅 Date:", date);
-    // console.log("👥 Employees:", employees);
-    // console.log("📝 Attendance State:", attendance);
-    const incomplete = employees.some((emp) => !attendance[emp._id]);
-    console.log("❓ Any incomplete attendance:", incomplete);
-    if (incomplete) {
-      toast.error("Please mark attendance for all employees");
+    if (records.length === 0) {
+      toast("Attendance already submitted");
       return;
     }
 
-    const records = employees.map((emp) => ({
-      userId: emp._id,
-      status: attendance[emp._id],
-    }));
-    console.log("📦 Payload Records:", records);
     try {
       await api.post("/owner/attendance/bulk", {
         date,
         records,
       });
 
-      toast.success("Attendance marked successfully");
-      setAttendance({});
-      console.log("correct");
+      toast.success("Bulk attendance submitted");
+      fetchAttendanceByDate(date);
     } catch (err) {
-      console.log("error");
-      toast.error(err.response?.data?.msg || "Failed");
+      toast.error(err.response?.data?.msg || "Bulk submit failed");
     }
   };
 
   /* ================= SUMMARY ================= */
   const summary = {
-    present: Object.values(attendance).filter((s) => s === "present").length,
-    absent: Object.values(attendance).filter((s) => s === "absent").length,
-    late: Object.values(attendance).filter((s) => s === "late").length,
+    present: Object.values(attendance).filter((a) => a.status === "present")
+      .length,
+    absent: Object.values(attendance).filter((a) => a.status === "absent")
+      .length,
+    late: Object.values(attendance).filter((a) => a.status === "late").length,
+    leave: Object.values(attendance).filter((a) => a.status === "leave").length,
   };
 
-  /* ================= UI ================= */
-  if (loading) {
-    return <p className="p-6">Loading...</p>;
-  }
+  if (loading) return <p className="p-6">Loading...</p>;
 
   return (
     <div className="p-6">
@@ -136,7 +168,7 @@ const MakeAttendance = () => {
       </p>
 
       {/* CONTROLS */}
-      <div className="flex gap-4 mb-6 flex-wrap">
+      <div className="flex gap-4 mb-6 flex-wrap items-center">
         <input
           type="date"
           value={date}
@@ -145,10 +177,10 @@ const MakeAttendance = () => {
         />
 
         <button
-          onClick={markAllPresent}
-          className="bg-green-600 text-white px-4 py-2 rounded"
+          onClick={submitAttendance}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
-          Mark All Present
+          Submit Bulk (Morning)
         </button>
 
         <input
@@ -161,75 +193,74 @@ const MakeAttendance = () => {
       </div>
 
       {/* SUMMARY */}
-      <div className="flex gap-6 mb-4 text-sm">
+      <div className="flex gap-6 mb-4 text-sm font-medium">
         <span className="text-green-600">Present: {summary.present}</span>
         <span className="text-red-600">Absent: {summary.absent}</span>
         <span className="text-yellow-600">Late: {summary.late}</span>
+        <span className="text-purple-600">Leave: {summary.leave}</span>
       </div>
 
       {/* TABLE */}
-      <div className="bg-white shadow rounded overflow-x-auto">
-        <table className="w-full">
+      <div className="bg-white shadow-lg rounded-xl overflow-x-auto">
+        <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-6 py-3">Employee</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">View</th>
+              <th className="px-6 py-3 text-left">Employee</th>
+              <th className="px-6 py-3 text-left">Status</th>
+              <th className="px-6 py-3 text-left">Note (optional)</th>
             </tr>
           </thead>
 
           <tbody>
-            {filteredEmployees.map((emp) => (
-              <tr key={emp._id} className="border-t">
-                <td className="px-6 py-4">
-                  {emp.username}
-                  <div className="text-xs text-gray-400">
-                    {emp.department?.name}
-                  </div>
-                </td>
+            {filteredEmployees.map((emp) => {
+              const current = attendance[emp._id] || {};
 
-                <td className="px-6 py-4 flex gap-3">
-                  {["present", "absent", "late", "leave"].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => markAttendance(emp._id, status)}
-                      className={`px-3 py-1 rounded capitalize ${
-                        attendance[emp._id] === status
-                          ? status === "present"
-                            ? "bg-green-600 text-white"
-                            : status === "absent"
-                            ? "bg-red-600 text-white"
-                            : status === "late"
-                            ? "bg-yellow-500 text-white"
-                            : "bg-purple-600 text-white"
-                          : "bg-gray-200"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </td>
+              return (
+                <tr key={emp._id} className="border-t hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <p className="font-medium">{emp.username}</p>
+                    <p className="text-xs text-gray-400">
+                      {emp.department?.name}
+                    </p>
+                  </td>
 
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => navigate(`/attendance/${emp._id}`)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                  >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-6 py-4 flex gap-2">
+                    {["present", "absent", "late", "leave"].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => markAttendance(emp._id, status)}
+                        className={`px-3 py-1 rounded capitalize text-xs font-medium ${
+                          current.status === status
+                            ? status === "present"
+                              ? "bg-green-600 text-white"
+                              : status === "absent"
+                              ? "bg-red-600 text-white"
+                              : status === "late"
+                              ? "bg-yellow-500 text-white"
+                              : "bg-purple-600 text-white"
+                            : "bg-gray-200 hover:bg-gray-300"
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <input
+                      type="text"
+                      placeholder="Optional note…"
+                      value={current.note || ""}
+                      onChange={(e) => updateNote(emp._id, e.target.value)}
+                      className="w-full border px-3 py-1.5 rounded text-xs focus:ring-2 focus:ring-blue-500"
+                    />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-
-      <button
-        onClick={submitAttendance}
-        className="mt-6 bg-blue-600 text-white px-6 py-2 rounded"
-      >
-        Submit Attendance
-      </button>
     </div>
   );
 };

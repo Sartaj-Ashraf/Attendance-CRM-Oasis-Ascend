@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import api from "../axios/axios.js";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 const Resetpassword = () => {
+  const navigate=useNavigate();
+  navigate("/login")
   const [data, setData] = useState("");
 
   const changeHandler = (e) => {

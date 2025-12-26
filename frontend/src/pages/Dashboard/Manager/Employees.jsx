@@ -29,6 +29,7 @@ const ManagerEmployees = () => {
     };
 
     fetchAuthUser();
+    fetchEmployees(deptId );
   }, []);
 
   // 🔹 Fetch employees by department

@@ -6,9 +6,9 @@ import UserModel from "../Models/User.model.js";
 
 // router.get("/statuses", getAllStatuses);
 router.get("/isAuth", authMiddleware, async (req, res) => {
-  const user = await UserModel.findById(req.user.id).select(
-    "username email role"
-  );
+  const user = await UserModel.findById(req.user.id)
+    .select("username email role department")
+    .populate("department", "name");
 
   if (!user) {
     return res.status(401).json({ msg: "User not found" });
@@ -20,7 +20,9 @@ router.get("/isAuth", authMiddleware, async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      department: user.department,
     },
   });
 });
+
 export default router;

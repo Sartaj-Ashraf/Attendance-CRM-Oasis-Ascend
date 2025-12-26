@@ -1,7 +1,5 @@
 import UserModel from "../Models/User.model.js";
-import AttendenceModel from "../Models/Attendence.model.js";
-
-// here we get all status
+import AttendanceModel from "../Models/Attendence.model.js";
 
 export const markAttendance = async (req, res) => {
   try {
@@ -52,6 +50,8 @@ export const markAttendance = async (req, res) => {
   }
 };
 export const markBulkAttendance = async (req, res) => {
+  console.log("🔥 markBulkAttendance HIT");
+
   try {
     const { records, date } = req.body;
 
@@ -97,6 +97,7 @@ export const markBulkAttendance = async (req, res) => {
       total: bulkOps.length,
     });
   } catch (error) {
+    console.error("❌ BULK ATTENDANCE ERROR:", error);
     return res.status(500).json({ msg: error.message });
   }
 };

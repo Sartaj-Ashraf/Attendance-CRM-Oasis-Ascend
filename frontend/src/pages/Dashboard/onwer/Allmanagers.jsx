@@ -38,6 +38,7 @@ const Managers = () => {
               <th className="px-6 py-4">Email</th>
               <th className="px-6 py-4">Department</th>
               <th className="px-6 py-4 text-center">Status</th>
+              <th className="px-6 py-4 text-center">Demote</th>
             </tr>
           </thead>
 

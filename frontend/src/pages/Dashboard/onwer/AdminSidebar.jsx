@@ -113,7 +113,7 @@ const AdminSidebar = () => {
               }`
             }
           >
-            Users
+            Employee
           </NavLink>
             <NavLink
             to="/owner/managers"

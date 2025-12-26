@@ -59,17 +59,6 @@ const Users = () => {
         toast.warning("User blocked");
       }
 
-      // ✅ UNBLOCK USER
-      if (actionType === "unblock") {
-        await api.put(`/owner/activateaccount/${selectedUser._id}`);
-        setUsers((prev) =>
-          prev.map((u) =>
-            u._id === selectedUser._id ? { ...u, isActive: true } : u
-          )
-        );
-        toast.success("User unblocked");
-      }
-
       // 🚀 PROMOTE USER
       if (actionType === "promote") {
         await api.patch(`/owner/promoteUser/${selectedUser._id}`);

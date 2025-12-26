@@ -26,8 +26,12 @@ import AttendanceDetails from "./pages/Dashboard/onwer/AttendanceDetails.jsx";
 import Allmanagers from "./pages/Dashboard/onwer/Allmanagers.jsx";
 import BlockedUsers from "./pages/Dashboard/onwer/BlockedUsers.jsx";
 import  Navbar  from "./components/Navbar.jsx";
+import { ViewManagers } from "./pages/Dashboard/Manager/ViewManagers.jsx";
 const router = createBrowserRouter([
   {
+    path:"/test3",
+    element:<ViewManagers/>
+  },{
     path: "/test",
     element: <Navbar />,
   },

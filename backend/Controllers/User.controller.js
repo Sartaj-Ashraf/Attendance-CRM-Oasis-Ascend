@@ -128,6 +128,7 @@ export const loginUser = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

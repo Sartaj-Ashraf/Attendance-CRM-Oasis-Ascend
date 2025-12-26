@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddUser from "./AddUser";
-
+import AttendanceReportWidget from "../AttendanceReportWidget";
 const AdminHome = () => {
   const [showAddUser, setShowAddUser] = useState(false);
   const navigate = useNavigate();
@@ -70,6 +70,7 @@ const AdminHome = () => {
           <li>Control roles and permissions</li>
         </ul>
       </div>
+      <AttendanceReportWidget />
     </div>
   );
 };

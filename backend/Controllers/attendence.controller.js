@@ -9,28 +9,26 @@ export const markAttendance = async (req, res) => {
       return res.status(400).json({ msg: "userId and status are required" });
     }
 
-    // validate status enum
     const allowedStatuses = ["present", "absent", "leave", "late"];
     if (!allowedStatuses.includes(status.toLowerCase())) {
       return res.status(400).json({ msg: "Invalid attendance status" });
     }
 
-    // check user exists
     const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // normalize today date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const attendance = await AttendenceModel.findOneAndUpdate(
+    const attendance = await AttendanceModel.findOneAndUpdate(
       { user: userId, date: today },
       {
         status: status.toLowerCase(),
-        markedBy: req.user._id,
+        markedBy: req.user.id, // ✅ FIXED
         note,
+        date: today,
       },
       {
         upsert: true,
@@ -39,16 +37,18 @@ export const markAttendance = async (req, res) => {
       }
     )
       .populate("user", "username email")
-      .populate("markedBy", "username");
+      .populate("markedBy", "username role");
 
     return res.status(200).json({
       msg: "Attendance saved successfully",
       attendance,
     });
   } catch (err) {
+    console.error("❌ markAttendance:", err);
     return res.status(500).json({ msg: err.message });
   }
 };
+
 export const markBulkAttendance = async (req, res) => {
   console.log("🔥 markBulkAttendance HIT");
 
@@ -99,5 +99,69 @@ export const markBulkAttendance = async (req, res) => {
   } catch (error) {
     console.error("❌ BULK ATTENDANCE ERROR:", error);
     return res.status(500).json({ msg: error.message });
+  }
+};
+export const getAttendanceByDate = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const user = req.user; // from authMiddleware
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: "Date is required (YYYY-MM-DD)",
+      });
+    }
+
+    // Normalize date (00:00 to 23:59)
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    let userFilter = {};
+
+    // 🔐 ROLE-BASED ACCESS
+    if (user.role === "manager") {
+      // manager → only their department employees
+      const users = await UserModel.find({
+        department: user.department,
+        isDeleted: false,
+        isActive: true,
+      }).select("_id");
+
+      userFilter.user = { $in: users.map((u) => u._id) };
+    }
+
+    // owner → sees all users (no filter)
+
+    const attendance = await AttendanceModel.find({
+      date: { $gte: start, $lte: end },
+      ...userFilter,
+    })
+      .populate({
+        path: "user",
+        select: "username email department",
+        populate: {
+          path: "department",
+          select: "name",
+        },
+      })
+      .populate("markedBy", "username role")
+      .sort({ "user.username": 1 });
+
+    return res.status(200).json({
+      success: true,
+      count: attendance.length,
+      data: attendance,
+    });
+  } catch (error) {
+    console.error("❌ getAttendanceByDate:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };

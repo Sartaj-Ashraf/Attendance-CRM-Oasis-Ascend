@@ -45,12 +45,10 @@
 
 // export default ManagerSidebar;
 
-
-
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import api from "../../../axios/axios";
-import { AuthContext } from '../../../ContextApi/isAuth'
+import { AuthContext } from "../../../ContextApi/isAuth";
 
 const ManagerSidebar = () => {
   const { user, setIsAuth, setUser } = useContext(AuthContext);
@@ -66,6 +64,7 @@ const ManagerSidebar = () => {
       console.error(error);
     }
   };
+  // console.log(user)
 
   return (
     <aside className="w-64 h-screen bg-gray-100 p-4">
@@ -88,7 +87,7 @@ const ManagerSidebar = () => {
           >
             Users
           </NavLink>
-            <NavLink
+          <NavLink
             to="/admin/managers"
             className={({ isActive }) =>
               `block bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium transition ${
@@ -113,7 +112,7 @@ const ManagerSidebar = () => {
           >
             Attendance
           </NavLink>
-            <NavLink
+          <NavLink
             to="/owner/block-users"
             className={({ isActive }) =>
               `block bg-blue-50 px-4 py-3 rounded-lg text-sm font-medium transition ${
@@ -140,7 +139,7 @@ const ManagerSidebar = () => {
                 {user?.username}
               </p>
               <p className="text-xs text-gray-500">
-                {user.role}
+                {`${user?.role} (${user?.department?.name})`}
               </p>
             </div>
           </div>
@@ -152,7 +151,6 @@ const ManagerSidebar = () => {
             Logout
           </button>
         </div>
-
       </div>
     </aside>
   );

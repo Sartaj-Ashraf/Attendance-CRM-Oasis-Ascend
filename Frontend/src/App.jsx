@@ -25,10 +25,11 @@ import Departments from "./pages/Dashboard/onwer/Departments.jsx";
 import AttendanceDetails from "./pages/Dashboard/onwer/AttendanceDetails.jsx";
 import Allmanagers from "./pages/Dashboard/onwer/Allmanagers.jsx";
 import BlockedUsers from "./pages/Dashboard/onwer/BlockedUsers.jsx";
+import  Navbar  from "./components/Navbar.jsx";
 const router = createBrowserRouter([
   {
     path: "/test",
-    element: <Departments />,
+    element: <Navbar />,
   },
   {
     path: "/test2",

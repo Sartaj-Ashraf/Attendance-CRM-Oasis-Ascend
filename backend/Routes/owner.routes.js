@@ -18,10 +18,10 @@ import {
   markAttendance,
   markBulkAttendance,
 } from "../Controllers/attendence.controller.js";
-router.post("/create", authMiddleware, isAdmin, createUser);
-router.post("/edituser/:id", authMiddleware, isAdmin, editUser);
-router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount);
-router.post("/activateaccount/:id", authMiddleware, isAdmin, activateaccount);
+router.post("/create", authMiddleware, isAdmin, createUser); // creating user
+router.post("/edituser/:id", authMiddleware, isAdmin, editUser); // edit user
+router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user
+router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
 router.post("/asignrole/:id", authMiddleware, isAdmin, assignRole);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
 router.post("/attendance/bulk", authMiddleware, markBulkAttendance);

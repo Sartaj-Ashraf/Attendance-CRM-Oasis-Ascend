@@ -19,7 +19,6 @@ const BlockedUsers = () => {
     }
   };
 
-  // Unblock a user
   const handleUnblock = async (userId) => {
     const confirm = window.confirm(
       "Are you sure you want to unblock this user?"
@@ -29,7 +28,7 @@ const BlockedUsers = () => {
     try {
       setUnblockingId(userId);
       await api.put(`/owner/unblockUser/${userId}`); // backend route to unblock
-      toast.success("User unblocked successfully");
+      toast.success("User unblocked successfully", { icons: false });
       fetchBlockedUsers(); // refresh list
     } catch (err) {
       toast.error("Failed to unblock user");

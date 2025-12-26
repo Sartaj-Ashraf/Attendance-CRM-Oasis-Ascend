@@ -6,54 +6,61 @@ import nodemailer from "nodemailer";
 import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 
+import mongoose from "mongoose";
+
 export const createUser = async (req, res) => {
   try {
-    let { username, email, payment, phone, department } = req.body;
+    let { username, email, phone, payment, department } = req.body;
 
     // 1️⃣ Validation
-    if (!username || !email || !payment || !phone || !department) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!username || !email || !phone || !payment || !department) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(department)) {
+      return res.status(400).json({
+        message: "Invalid department ID",
+      });
     }
 
     username = username.toLowerCase();
     email = email.toLowerCase();
     payment = payment.toLowerCase();
 
-    // 2️⃣ Find department by NAME
-    const departmentDoc = await DepartmentModel.findOne({
-      name: department.toUpperCase(),
-    });
-
+    // 2️⃣ Find department by ID ✅
+    const departmentDoc = await DepartmentModel.findById(department);
     if (!departmentDoc) {
       return res.status(404).json({
         message: "Department does not exist",
       });
     }
 
-    const departmentId = departmentDoc._id; // ✅ ObjectId
-
     // 3️⃣ Check existing user
-    const existingUser = await UserModel.findOne({ email });
+    const existingUser = await UserModel.findOne({ email, isDeleted: false });
     if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
+      return res.status(409).json({
+        message: "User already exists",
+      });
     }
 
-    // 4️⃣ Check if department already has users
-    const departmentUser = await UserModel.findOne({
-      department: departmentId,
-      isDeleted: false,
-    });
-
+    // 4️⃣ Manager logic
     let finalRole = "employee";
     let reportingManager = null;
 
-    // 5️⃣ First user → Manager
+    const departmentUser = await UserModel.findOne({
+      department,
+      isDeleted: false,
+    });
+
     if (!departmentUser) {
+      // First user in department
       finalRole = "manager";
     } else {
       const manager = await UserModel.findOne({
         role: "manager",
-        department: departmentId,
+        department,
         isActive: true,
         isDeleted: false,
       });
@@ -67,25 +74,27 @@ export const createUser = async (req, res) => {
       reportingManager = manager._id;
     }
 
-    // 6️⃣ Password
-    const passwordSetupToken = crypto.randomBytes(20).toString("hex");
+    // 5️⃣ Password + Token
     const tempPassword = crypto.randomBytes(6).toString("hex");
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    // 7️⃣ Create user
+    const passwordSetupToken = crypto.randomBytes(32).toString("hex");
+
+    // 6️⃣ Create user
     const newUser = await UserModel.create({
       username,
       email,
       phone,
       payment,
-      department: departmentId, // ✅ ObjectId
+      department,
       role: finalRole,
       reportingManager,
       password: hashedPassword,
       passwordSetupToken,
-      passwordSetupExpires: Date.now() + 60 * 60 * 1000,
+      passwordSetupExpires: Date.now() + 60 * 60 * 1000, // 1 hour
     });
 
+    // 7️⃣ Response
     res.status(201).json({
       message: "User created successfully",
       user: {
@@ -99,7 +108,9 @@ export const createUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Create user error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
@@ -168,64 +179,64 @@ export const editUser = async (req, res) => {
     });
   }
 };
+
+
 export const disableaccount = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ message: "User id is required" });
+    // 1️⃣ Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "Invalid user id" });
     }
-    const user = await UserModel.findById(id);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // 2️⃣ Check user exists
+    const user = await UserModel.findById(id);
+    if (!user || user.isDeleted) {
+      return res.status(404).json({ msg: "User not found" });
     }
-    if (user.role === "admin") {
-      console.log("admin");
-      return res.status(404).json({ message: "Admin cant deleted" });
-    }
-    user.isActive = false;
-    await user.save();
+
+    // 3️⃣ SAFE update (NO save)
+    await UserModel.findByIdAndUpdate(id, { isActive: false }, { new: true });
 
     return res.status(200).json({
-      message: "Account disabled successfully",
+      msg: "Account disabled successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("disableaccount error:", error);
+    return res.status(500).json({ msg: "Server error" });
   }
 };
+
 export const activateaccount = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 400 → Bad Request (client sent invalid/missing data)
-    if (!id) {
-      return res.status(400).json({ msg: "id is required" });
+    // 1️⃣ Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "Invalid user id" });
     }
 
-    // findById expects the id directly, not an object
+    // 2️⃣ Check user exists
     const user = await UserModel.findById(id);
-
-    // 404 → Resource not found
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    user.isActive = true;
-    await user.save();
+    // 3️⃣ Activate account (NO save)
+    await UserModel.findByIdAndUpdate(id, { isActive: true }, { new: true });
 
-    // 200 → Success
-    return res.status(200).json({ msg: "Account activated successfully" });
+    return res.status(200).json({
+      msg: "Account activated successfully",
+    });
   } catch (e) {
-    // 500 → Server error
-    return res
-      .status(500)
-      .json({ msg: "Internal server error", error: e.message });
+    console.error("activateaccount error:", e);
+    return res.status(500).json({
+      msg: "Internal server error",
+    });
   }
 };
+
 export const assignRole = async (req, res) => {
   try {
     const { id } = req.params;
@@ -330,23 +341,27 @@ export const getAllDepartmentUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id) {
-      return res.status(400).json({ msg: "User id is required" });
+
+    // 1️⃣ Validate ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: "Invalid user id" });
     }
 
+    // 2️⃣ Check user exists
     const user = await UserModel.findById(id);
-
-    if (!user) {
+    if (!user || user.isDeleted) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // 🔹 Soft delete
-    if (user.isDeleted) {
-      return res.status(400).json({ msg: "User is already deleted" });
-    }
-
-    user.isDeleted = true;
-    await user.save();
+    // 3️⃣ Soft delete (NO save)
+    await UserModel.findByIdAndUpdate(
+      id,
+      {
+        isDeleted: true,
+        isActive: false,
+      },
+      { new: true }
+    );
 
     return res.status(200).json({
       success: true,
@@ -357,6 +372,7 @@ export const deleteUser = async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
+
 export const getBlockedUser = async (req, res) => {
   try {
     const users = await UserModel.find({
@@ -383,7 +399,7 @@ export const GetAllEmployee = async (req, res) => {
     const loggedInUserId = req.user._id; // from auth middleware
 
     const employees = await UserModel.find({
-      _id: { $ne: loggedInUserId }, // ❌ exclude self
+      _id: { $ne: loggedInUserId }, 
       role: "employee",
       isDeleted: false,
       isActive: true,

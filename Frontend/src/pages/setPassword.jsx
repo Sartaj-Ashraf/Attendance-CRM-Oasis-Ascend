@@ -45,7 +45,7 @@ const SetPassword = ({ data }) => {
   };
 
   return (
-    <div className=" w-full min-h-screen bg-gradient-to-br from-blue-50 to-blue-200 flex items-center justify-center px-4">
+    <div className=" w-full min-h-screen  flex items-center justify-center px-4">
       <form
         onSubmit={submitHandler}
         className="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl flex flex-col gap-6"

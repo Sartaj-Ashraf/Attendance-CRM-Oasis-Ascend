@@ -9,7 +9,7 @@ const AdminHome = () => {
   return (
     <div className="space-y-8">
       <div className="bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-2xl font-bold text-gray-800">Welcome, Admin 👋</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Welcome, Admin </h1>
         <p className="text-gray-500 mt-2">
           Manage users, attendance, and system settings from here.
         </p>

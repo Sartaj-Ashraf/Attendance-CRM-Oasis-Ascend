@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
-import SetPassword from "./setPassword";
+import SetPassword from "./SetPassword";
+import toast, { Toaster } from "react-hot-toast";
+
 const Verify = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -10,43 +12,68 @@ const Verify = () => {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
-  const [user, setuser] = useState("");
+  const [user, setUser] = useState(null);
+
   useEffect(() => {
+    const toastId = toast.loading("Verifying your account...");
+
     axios
-      .get(`http://localhost:5000/user/verifyToken`, {
-        params: {
-          email,
-          token,
-        },
+      .get("http://localhost:5000/user/verifyToken", {
+        params: { email, token },
       })
       .then((res) => {
         setTimeout(() => {
-          setuser(res.data);
+          setUser(res.data);
           setLoading(false);
           setVerifying(true);
-          console.log("helo");
+          toast.success("Verification successful 🎉", { id: toastId });
         }, 1500);
       })
       .catch((err) => {
-        console.log("error in catch ");
         setTimeout(() => {
           setLoading(false);
           setVerifying(false);
-          setError(err.response?.data?.message || "Verification failed");
+          const msg = err.response?.data?.message || "Verification failed";
+          setError(msg);
+          toast.error(msg, { id: toastId });
         }, 1500);
       });
   }, [email, token]);
 
   return (
-    <div className="w-full h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
-      {loading && (
-        <h2 className="text-3xl text-white">Verifying the user...</h2>
-      )}
+    <>
+      <Toaster position="top-right" />
 
-      {!loading && error && <h2 className="text-red-500 text-xl">{error}</h2>}
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4">
+        <div className="w-full max-w-md backdrop-blur-xl borderrounded-2xl shadow-2xl p-8 transition-all duration-300">
+          {/* Loading State */}
+          {loading && (
+            <div className="flex flex-col items-center gap-4 text-white">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <h2 className="text-xl font-semibold tracking-wide">
+                Verifying your account...
+              </h2>
+              <p className="text-sm text-gray-300">
+                Please wait while we validate your link
+              </p>
+            </div>
+          )}
 
-      {!loading && verifying && <SetPassword data={user} />}
-    </div>
+          {/* Error State */}
+          {!loading && error && (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-red-500 mb-2">
+                Verification Failed
+              </h2>
+              <p className="text-gray-300 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Success State */}
+          {!loading && verifying && user && <SetPassword data={user} />}
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -7,6 +7,7 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 
 import mongoose from "mongoose";
+import { sendSetPasswordEmail } from "../services/email.service.js";
 
 export const createUser = async (req, res) => {
   try {
@@ -79,6 +80,9 @@ export const createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     const passwordSetupToken = crypto.randomBytes(32).toString("hex");
+    const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordSetupToken}`;
+
+    await sendSetPasswordEmail(email, resetUrl);
 
     // 6️⃣ Create user
     const newUser = await UserModel.create({
@@ -104,6 +108,7 @@ export const createUser = async (req, res) => {
         role: newUser.role,
         department: departmentDoc.name,
         reportingManager: reportingManager || "SELF",
+        resetUrl:resetUrl,
       },
     });
   } catch (error) {
@@ -180,7 +185,6 @@ export const editUser = async (req, res) => {
   }
 };
 
-
 export const disableaccount = async (req, res) => {
   try {
     const { id } = req.params;
@@ -238,40 +242,40 @@ export const activateaccount = async (req, res) => {
 };
 
 export const assignRole = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
+try {
+  const { id } = req.params;
+  const { role } = req.body;
 
-    // 400 → Bad request (missing data)
-    if (!id || !role) {
-      return res.status(400).json({ msg: "id and role are required" });
-    }
-
-    const user = await UserModel.findById(id);
-
-    // 404 → User not found
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-
-    user.role = role;
-    await user.save();
-
-    // 200 → Success
-    return res.status(200).json({
-      msg: "Role assigned successfully",
-      user: {
-        id: user._id,
-        role: user.role,
-      },
-    });
-  } catch (e) {
-    // 500 → Server error
-    return res.status(500).json({
-      msg: "Internal server error",
-      error: e.message,
-    });
+  // 400 → Bad request (missing data)
+  if (!id || !role) {
+    return res.status(400).json({ msg: "id and role are required" });
   }
+
+  const user = await UserModel.findById(id);
+
+  // 404 → User not found
+  if (!user) {
+    return res.status(404).json({ msg: "User not found" });
+  }
+
+  user.role = role;
+  await user.save();
+
+  // 200 → Success
+  return res.status(200).json({
+    msg: "Role assigned successfully",
+    user: {
+      id: user._id,
+      role: user.role,
+    },
+  });
+} catch (e) {
+  // 500 → Server error
+  return res.status(500).json({
+    msg: "Internal server error",
+    error: e.message,
+  });
+}
 };
 
 // export const getAllUsers = async (req, res) => {
@@ -399,7 +403,7 @@ export const GetAllEmployee = async (req, res) => {
     const loggedInUserId = req.user._id; // from auth middleware
 
     const employees = await UserModel.find({
-      _id: { $ne: loggedInUserId }, 
+      _id: { $ne: loggedInUserId },
       role: "employee",
       isDeleted: false,
       isActive: true,

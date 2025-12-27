@@ -9,7 +9,7 @@ const Userdashboard = () => {
 
       <div className="flex-1">
         <div className="p-8">
-          <Outlet /> {/* 👈 renders Attendance, Salary, etc */}
+          <Outlet />
         </div>
       </div>
     </div>

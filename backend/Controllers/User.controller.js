@@ -83,6 +83,7 @@ export const setPassword = async (req, res) => {
     user.passwordSetupToken = undefined;
     user.passwordSetupExpires = undefined;
     user.isActive = true;
+    user.isEmailVerified = true;
 
     await user.save();
 
@@ -116,6 +117,12 @@ export const loginUser = async (req, res) => {
     if (!user.isActive) {
       return res.status(400).json({ msg: "Your Account is disable by Admin " });
     }
+    if (!user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        msg: "Please verify your email. Check your inbox or contact the administrator.",
+      });
+    }
     if (user.isDeleted) {
       return res.status(403).json({
         success: false,
@@ -128,7 +135,7 @@ export const loginUser = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      
+
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

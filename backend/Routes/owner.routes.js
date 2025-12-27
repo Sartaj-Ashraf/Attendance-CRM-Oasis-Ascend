@@ -22,7 +22,7 @@ router.post("/create", authMiddleware, isAdmin, createUser); // creating user
 router.post("/edituser/:id", authMiddleware, isAdmin, editUser); // edit user
 router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user
 router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
-router.post("/asignrole/:id", authMiddleware, isAdmin, assignRole);
+router.patch("/assign-role/:id", authMiddleware, assignRole);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
 router.post("/attendance/bulk", authMiddleware, markBulkAttendance);
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);

@@ -5,30 +5,11 @@ const AttendanceDetails = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  // Dummy employee info (later from backend)
-  const employee = state || {
-    name: "John Doe",
-    department: "Development",
-    employeeId: "EMP001",
-  };
 
   // Month selector
   const [selectedMonth, setSelectedMonth] = useState("2025-12");
 
-  // Dummy attendance data (backend-ready)
-  // const attendanceData = {
-  //   "2025-12": [
-  //     { date: "01-12-2025", day: "Mon", status: "Present", in: "09:05", out: "18:10", remark: "-" },
-  //     { date: "02-12-2025", day: "Tue", status: "Late", in: "09:45", out: "18:00", remark: "Traffic" },
-  //     { date: "03-12-2025", day: "Wed", status: "Absent", in: "-", out: "-", remark: "Leave" },
-  //     { date: "04-12-2025", day: "Thu", status: "Present", in: "09:00", out: "18:05", remark: "-" },
-  //   ],
-  //   "2025-11": [
-  //     { date: "01-11-2025", day: "Fri", status: "Present", in: "09:10", out: "18:00", remark: "-" },
-  //     { date: "02-11-2025", day: "Sat", status: "Present", in: "09:00", out: "14:00", remark: "Half Day" },
-  //   ],
-  // };
-
+ 
   const records = attendanceData[selectedMonth] || [];
 
   // Summary calculations

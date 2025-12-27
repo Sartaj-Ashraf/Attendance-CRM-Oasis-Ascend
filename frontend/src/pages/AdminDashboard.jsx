@@ -13,7 +13,9 @@ const AdminDashboard = () => {
         {/* Optional Topbar */}
         {/* <Topbar /> */}
 
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main
+          className="flex-1 p-8 overflow-y-auto "
+        >
           <Outlet /> {/* Admin pages render here */}
         </main>
       </div>

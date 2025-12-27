@@ -1,4 +1,5 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import {  Toaster } from "sonner";
 
 import Login from "./pages/Login.jsx";
 
@@ -7,15 +8,12 @@ import Verify from "./pages/Verify";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Userdashboard from "./pages/Userdashboard";
 import Attendance from "./pages/Dashboard/User/Attendance";
-
 import AdminHome from "./pages/Dashboard/onwer/AdminHome.jsx";
 import AddUser from "./pages/Dashboard/onwer/AddUser.jsx";
-
-// import Users from "./pages/Dashboard/onwer/User.jsx";
+import AttendanceReportWidget from "./pages/Dashboard/AttendanceReportWidget.jsx";
 import Users from "./pages/Dashboard/onwer/Users.jsx";
 import AdminAttendance from "./pages/Dashboard/onwer/AdminAttendance.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
-import { Toaster } from "react-hot-toast";
 import ManagerDashboard from "./pages/ManagerDashboard.jsx";
 import ManagerHome from "./pages/Dashboard/Manager/ManagerHome.jsx";
 import ManagerEmployees from "./pages/Dashboard/Manager/Employees.jsx";
@@ -135,51 +133,19 @@ const router = createBrowserRouter([
         path: "block-users",
         element: <BlockedUsers />,
       },
+      { path: "reports", element: <AttendanceReportWidget /> },
     ],
   },
 
-  {
-    path: "/test",
-    element: <Userdashboard />,
-  },
+
 ]);
 
 const App = () => {
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            maxWidth: "420px",
-            overflow: "hidden",
-            background: "#0f172a",
-            color: "#fff",
-            borderRadius: "10px",
-            padding: "14px 16px",
-            width: "300px",
-          },
-          success: {
-            style: {
-              border: "2px solid #22c55e",
-            },
-            iconTheme: {
-              primary: "#22c55e",
-              secondary: "#ecfdf5",
-            },
-          },
-          error: {
-            style: {
-              border: "2px solid #ef4444",
-            },
-            iconTheme: {
-              primary: "#ef4444",
-              secondary: "#fef2f2",
-            },
-          },
-        }}
-      />
+           <Toaster richColors position="top-right" />
+     
+     
       <RouterProvider router={router} />
     </>
   );

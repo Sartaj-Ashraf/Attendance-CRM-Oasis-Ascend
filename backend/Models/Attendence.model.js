@@ -42,7 +42,7 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🔒 One attendance per user per day
+// One attendance per user per day
 attendanceSchema.index({ user: 1, date: 1 }, { unique: true });
 
 export default mongoose.model("Attendance", attendanceSchema);

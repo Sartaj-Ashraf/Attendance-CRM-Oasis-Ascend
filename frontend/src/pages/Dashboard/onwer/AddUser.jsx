@@ -27,7 +27,7 @@ const AddUser = ({ onClose, departments = [] }) => {
     try {
       setLoading(true);
 
-      await api.post("/owner/create", form);
+      await api.post("/owner/createUser", form);
 
       toast.success("User created successfully");
 

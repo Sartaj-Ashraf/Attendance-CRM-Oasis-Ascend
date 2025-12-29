@@ -25,10 +25,36 @@ const Managers = () => {
       setLoading(false);
     }
   };
-
+  const handleOpenConfirm = (manager) => {
+    setSelectedManager(manager);
+    setShowConfirm(true);
+  };
   useEffect(() => {
     fetchManagers();
   }, []);
+  const filteredManagers = useMemo(() => {
+    return managers.filter((manager) =>
+      manager?.username?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [managers, DebounceSearch]);
+  const handleConfirmDemote = async () => {
+    try {
+      await api.patch(`/owner/demote/${selectedManager._id}`);
+      toast.success("Manager demoted successfully");
+
+      // update UI
+      setManagers((prev) => prev.filter((m) => m._id !== selectedManager._id));
+    } catch (error) {
+      toast.error("Failed to demote manager");
+    } finally {
+      setShowConfirm(false);
+      setSelectedManager(null);
+    }
+  };
+  const handleCancel = () => {
+    setShowConfirm(false);
+    setSelectedManager(null);
+  };
 
   // 🔹 Open replace modal
   const handleOpenReplaceModal = (manager) => {

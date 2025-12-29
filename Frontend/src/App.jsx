@@ -1,5 +1,7 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { Toaster } from "sonner";
+
+import {  Toaster } from "sonner";
+
 
 import Login from "./pages/Login.jsx";
 

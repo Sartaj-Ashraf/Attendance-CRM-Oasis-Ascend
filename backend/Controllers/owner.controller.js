@@ -312,6 +312,25 @@ export const replaceManager = async (req, res) => {
       error: error.message,
     });
   }
+
+  user.role = role;
+  await user.save();
+
+  // 200 → Success
+  return res.status(200).json({
+    msg: "Role assigned successfully",
+    user: {
+      id: user._id,
+      role: user.role,
+    },
+  });
+} catch (e) {
+  // 500 → Server error
+  return res.status(500).json({
+    msg: "Internal server error",
+    error: e.message,
+  });
+}
 };
 
 // export const getAllUsers = async (req, res) => {

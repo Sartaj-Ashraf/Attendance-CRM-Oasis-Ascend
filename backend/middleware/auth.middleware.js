@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 export const authMiddleware = async (req, res, next) => {
-  const token = req.cookies.AttendenceToken;
+  const token = req.cookies?.AttendenceToken;
   if (!token) {
     return res.status(401).json({ msg: "No token avalaible" });
   }

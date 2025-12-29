@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useMemo } from "react";
-import api from "../../../axios/axios";
+import api from "../../../axios/axios.js"
 import toast from "react-hot-toast";
 import useDebounce from "../../../hooks/Debouncing";
-// import ConfirmModal from "@/components/common/ConfirmModal";
-import ConfirmModal from "../../../components/confrim/ConfirmModal";
+import OwnerReplaceManagerModal from "../../../components/OwnerReplaceManagerModal";
 
 const Managers = () => {
   const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [selectedManager, setSelectedManager] = useState(null);
 
-  const DebounceSearch = useDebounce(search, 600);
+  const debouncedSearch = useDebounce(search, 600);
+
+  // 🔹 Fetch managers
   const fetchManagers = async () => {
     try {
       const res = await api.get("/owner/getManagers");
@@ -54,26 +56,40 @@ const Managers = () => {
     setSelectedManager(null);
   };
 
+  // 🔹 Open replace modal
+  const handleOpenReplaceModal = (manager) => {
+    setSelectedManager(manager);
+    setShowReplaceModal(true);
+  };
+
+  // 🔹 Filter managers
+  const filteredManagers = useMemo(() => {
+    return managers.filter((manager) =>
+      manager?.username
+        ?.toLowerCase()
+        .includes(debouncedSearch.toLowerCase())
+    );
+  }, [managers, debouncedSearch]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 p-6">
-      {/* Header */}
-      <div className="mb-6 flex">
+      
+      <div className="mb-6 flex items-center gap-4">
         <div>
-          {" "}
-          <h1 className="text-2xl font-bold text-gray-800">Managers</h1>{" "}
+          <h1 className="text-2xl font-bold text-gray-800">Managers</h1>
           <p className="text-gray-500">List of all department managers</p>
         </div>
 
         <input
           type="text"
-          placeholder="Search employee..."
+          placeholder="Search manager..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-grey-900 px-3 py-2 rounded ml-auto"
+          className="ml-auto border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      {/* Table Card */}
+      {/* Table */}
       <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-gray-100 text-gray-700 text-sm uppercase">
@@ -82,20 +98,20 @@ const Managers = () => {
               <th className="px-6 py-4">Email</th>
               <th className="px-6 py-4">Department</th>
               <th className="px-6 py-4 text-center">Status</th>
-              <th className="px-6 py-4 text-center">Demote</th>
+              <th className="px-6 py-4 text-center">Action</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="4" className="text-center py-10 text-gray-500">
+                <td colSpan="5" className="text-center py-10 text-gray-500">
                   Loading managers...
                 </td>
               </tr>
             ) : filteredManagers.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center py-10 text-gray-500">
+                <td colSpan="5" className="text-center py-10 text-gray-500">
                   No managers found
                 </td>
               </tr>
@@ -109,7 +125,9 @@ const Managers = () => {
                     {manager.username}
                   </td>
 
-                  <td className="px-6 py-4 text-gray-600">{manager.email}</td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {manager.email}
+                  </td>
 
                   <td className="px-6 py-4 text-gray-600">
                     {manager.department?.name || "Not Assigned"}
@@ -126,10 +144,11 @@ const Managers = () => {
                       {manager.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center ">
+
+                  <td className="px-6 py-4 text-center">
                     <button
-                      onClick={() => handleOpenConfirm(manager)}
-                      className="text-white  p-2 rounded-2xl hover:underline text-m bg-red-700"
+                      onClick={() => handleOpenReplaceModal(manager)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
                     >
                       Demote
                     </button>
@@ -140,6 +159,16 @@ const Managers = () => {
           </tbody>
         </table>
       </div>
+
+      <OwnerReplaceManagerModal
+        open={showReplaceModal}
+        manager={selectedManager}
+        onClose={() => {
+          setShowReplaceModal(false);
+          setSelectedManager(null);
+        }}
+        onSuccess={fetchManagers}
+      />
     </div>
   );
 };

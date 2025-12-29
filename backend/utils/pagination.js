@@ -1,4 +1,4 @@
-export const paginate = async ({
+const paginate = async ({
   model,
   query = {},
   sort = { createdAt: -1 },
@@ -33,3 +33,4 @@ export const paginate = async ({
     },
   };
 };
+export default paginate;

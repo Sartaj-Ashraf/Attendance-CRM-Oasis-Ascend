@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Status from "../Models/Status.model.js";
+// import Status from "../Models/Status.model.js";
 // mongoose.connect(process.env.MONGO_URL);
 export const seed = async () => {
   await Status.insertMany([

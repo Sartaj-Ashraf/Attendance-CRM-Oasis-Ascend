@@ -5,7 +5,7 @@ import DepartmentModel from "../Models/Department.model.js";
 import nodemailer from "nodemailer";
 import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
-
+import pagination from "../utils/pagination.js";
 import mongoose from "mongoose";
 import { sendSetPasswordEmail } from "../services/email.service.js";
 
@@ -108,7 +108,7 @@ export const createUser = async (req, res) => {
         role: newUser.role,
         department: departmentDoc.name,
         reportingManager: reportingManager || "SELF",
-        resetUrl:resetUrl,
+        resetUrl: resetUrl,
       },
     });
   } catch (error) {
@@ -241,21 +241,76 @@ export const activateaccount = async (req, res) => {
   }
 };
 
-export const assignRole = async (req, res) => {
-try {
-  const { id } = req.params;
-  const { role } = req.body;
+export const replaceManager = async (req, res) => {
+  try {
+    const { id: newManagerId } = req.params;
 
-  // 400 → Bad request (missing data)
-  if (!id || !role) {
-    return res.status(400).json({ msg: "id and role are required" });
-  }
+    if (!newManagerId) {
+      return res.status(400).json({ msg: "User ID is required" });
+    }
 
-  const user = await UserModel.findById(id);
+    //  Find new manager candidate
+    const newManager = await UserModel.findById(newManagerId);
+    if (!newManager) {
+      return res.status(404).json({ msg: "User not found" });
+    }
 
-  // 404 → User not found
-  if (!user) {
-    return res.status(404).json({ msg: "User not found" });
+    // Find existing manager in SAME department
+    const previousManager = await UserModel.findOne({
+      role: "manager",
+      department: newManager.department,
+      isDeleted: false,
+    });
+
+    // If same user already manager
+    if (previousManager && previousManager._id.equals(newManager._id)) {
+      return res.status(400).json({
+        msg: "User is already the manager of this department",
+      });
+    }
+
+    //    If previous manager exists
+    if (previousManager) {
+      await User.updateMany(
+        {
+          reportingManager: previousManager._id,
+          isDeleted: false,
+        },
+        { $set: { reportingManager: newManager._id } }
+      );
+
+      // 2️⃣ Demote old manager
+      previousManager.role = "employee";
+      previousManager.reportingManager = newManager._id;
+      await previousManager.save();
+    }
+
+    // 3️⃣ Promote new manager
+    newManager.role = "manager";
+    newManager.reportingManager = null;
+    await newManager.save();
+
+    return res.status(200).json({
+      msg: "Manager assigned successfully",
+      data: {
+        newManager: {
+          id: newManager._id,
+          username: newManager.username,
+          department: newManager.department,
+        },
+        previousManager: previousManager
+          ? {
+              id: previousManager._id,
+              username: previousManager.username,
+            }
+          : null,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: "Internal server error",
+      error: error.message,
+    });
   }
 
   user.role = role;
@@ -400,25 +455,45 @@ export const getBlockedUser = async (req, res) => {
 };
 export const GetAllEmployee = async (req, res) => {
   try {
-    const loggedInUserId = req.user._id; // from auth middleware
+    const loggedInUserId = req.user._id;
 
-    const employees = await UserModel.find({
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const department = req.query.department;
+
+    const query = {
       _id: { $ne: loggedInUserId },
       role: "employee",
       isDeleted: false,
       isActive: true,
-    })
-      .select("-password")
-      .populate("department", "name")
-      .populate("reportingManager", "username email");
+    };
 
-    res.status(200).json({
-      count: employees.length,
-      employees,
+    // ✅ SAFE ObjectId handling (CRITICAL FIX)
+    if (department && mongoose.Types.ObjectId.isValid(department)) {
+      query.department = new mongoose.Types.ObjectId(department);
+    }
+
+    const result = await pagination({
+      model: UserModel,
+      page,
+      limit,
+      query,
+      select: "-password",
+      populate: [
+        { path: "department", select: "name" },
+        { path: "reportingManager", select: "username email" },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      ...result,
     });
   } catch (error) {
     console.error("GetAllEmployee error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 };
 

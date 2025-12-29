@@ -1,5 +1,6 @@
 import React from "react";
-
+import api from "../../axios/axios.js";
+import {toast} from "react-hot-toast"
 const UserRow = ({
   user,
   onEdit,
@@ -8,14 +9,35 @@ const UserRow = ({
   onPromote,
   onResendVerification,
 }) => {
+  
+  const submitHandler = async () => {
+    const toastId = toast.loading("Sending reset link to provided email...");
+
+    try {
+      const response = await api.post("user/resetpassword", {
+        email: user.email,
+      });
+
+      toast.success(response.data.msg, { id: toastId });
+    } catch (error) {
+      const message = error.response?.data?.msg || "Something went wrong";
+      toast.error(message, { id: toastId });
+    }
+  };
+
   return (
     <tr className="border-b border-gray-300 hover:bg-gray-50 transition-colors duration-200">
       {/* Name */}
       <td className="px-6 py-4 font-medium text-gray-800">
         {user.username}
         {!user.isEmailVerified && (
-          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1.5 rounded-full">
             Unverified
+          </span>
+        )}
+        {user.isEmailVerified && (
+          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1.5 rounded-full">
+            verified
           </span>
         )}
       </td>
@@ -46,7 +68,7 @@ const UserRow = ({
           {user.isActive && (
             <button
               onClick={() => onBlock(user)}
-              className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
+              className="px-3 py-1.5 bg-yellow-700 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
             >
               Block
             </button>
@@ -65,7 +87,7 @@ const UserRow = ({
           {/* Delete */}
           <button
             onClick={() => onDelete(user)}
-            className="px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
+            className="px-3 py-1.5 bg-red-800 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
           >
             Delete
           </button>
@@ -80,7 +102,7 @@ const UserRow = ({
           </button>
         ) : (
           <button
-            onClick={() => onResendVerification(user)}
+            onClick={() => submitHandler()}
             className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
           >
             Resend Confirmation

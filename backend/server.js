@@ -32,6 +32,7 @@ app.use(
 );
 // seed();
 // generateAttendances();
+import leaveRoutes from "./routes/leave.routes.js";
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
@@ -43,8 +44,11 @@ app.use("/user", userRouter);
 app.use("/owner", ownerRoute);
 app.use("/department", departmentRoute);
 app.use("/api", commonRoute);
+app.use("/leave", leaveRoutes);
 // auth middleware
+import seedRoutes from "./routes/seed.routes.js";
 
+app.use("/api", seedRoutes);
 app.listen(PORT, () => {
   console.log(`running on port ${PORT}`);
 });

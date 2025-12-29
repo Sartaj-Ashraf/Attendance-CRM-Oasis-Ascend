@@ -52,7 +52,7 @@ const AddUser = ({ onClose, departments = [] }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <h2 className="text-xl font-bold text-gray-800">
-        Add New User
+        Add New Employee
       </h2>
 
       <input

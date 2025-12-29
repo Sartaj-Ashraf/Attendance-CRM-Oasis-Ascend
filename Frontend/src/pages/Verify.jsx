@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import SetPassword from "./SetPassword";
-import toast, { Toaster } from "react-hot-toast";
 
 const Verify = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +14,6 @@ const Verify = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const toastId = toast.loading("Verifying your account...");
 
     axios
       .get("http://localhost:5000/user/verifyToken", {
@@ -26,7 +24,7 @@ const Verify = () => {
           setUser(res.data);
           setLoading(false);
           setVerifying(true);
-          toast.success("Verification successful 🎉", { id: toastId });
+  
         }, 1500);
       })
       .catch((err) => {
@@ -35,14 +33,13 @@ const Verify = () => {
           setVerifying(false);
           const msg = err.response?.data?.message || "Verification failed";
           setError(msg);
-          toast.error(msg, { id: toastId });
         }, 1500);
       });
   }, [email, token]);
 
   return (
     <>
-      <Toaster position="top-right" />
+
 
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4">
         <div className="w-full max-w-md backdrop-blur-xl borderrounded-2xl shadow-2xl p-8 transition-all duration-300">

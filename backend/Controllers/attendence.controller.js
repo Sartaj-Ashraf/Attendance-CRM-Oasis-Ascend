@@ -1,16 +1,22 @@
 import UserModel from "../Models/User.model.js";
 import AttendanceModel from "../Models/Attendence.model.js";
+import pagination from "../utils/pagination.js";
 
+/* =========================================================
+   MARK SINGLE ATTENDANCE (DATE AWARE + LOCK SAFE)
+========================================================= */
 export const markAttendance = async (req, res) => {
   try {
-    const { userId, status, note } = req.body;
+    const { userId, status, note, date } = req.body;
 
     if (!userId || !status) {
       return res.status(400).json({ msg: "userId and status are required" });
     }
 
-    const allowedStatuses = ["present", "absent", "leave", "late"];
-    if (!allowedStatuses.includes(status.toLowerCase())) {
+    const allowedStatuses = ["present", "absent", "leave", "late", "holiday"];
+    const normalizedStatus = status.toLowerCase();
+
+    if (!allowedStatuses.includes(normalizedStatus)) {
       return res.status(400).json({ msg: "Invalid attendance status" });
     }
 
@@ -19,16 +25,32 @@ export const markAttendance = async (req, res) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // ✅ USE DATE FROM REQUEST (FIXED)
+    const attendanceDate = date ? new Date(date) : new Date();
+    attendanceDate.setHours(0, 0, 0, 0);
+
+    // 🔒 CHECK EXISTING & LOCK
+    const existingAttendance = await AttendanceModel.findOne({
+      user: userId,
+      date: attendanceDate,
+    });
+
+    if (existingAttendance?.isLocked) {
+      return res.status(403).json({
+        msg: "Attendance is locked and cannot be modified",
+      });
+    }
+
+    const isLocked = ["leave", "holiday"].includes(normalizedStatus);
 
     const attendance = await AttendanceModel.findOneAndUpdate(
-      { user: userId, date: today },
+      { user: userId, date: attendanceDate },
       {
-        status: status.toLowerCase(),
-        markedBy: req.user.id, // ✅ FIXED
+        status: normalizedStatus,
         note,
-        date: today,
+        markedBy: req.user._id,
+        date: attendanceDate,
+        isLocked,
       },
       {
         upsert: true,
@@ -49,62 +71,70 @@ export const markAttendance = async (req, res) => {
   }
 };
 
+/* =========================================================
+   BULK ATTENDANCE (NO DUPLICATES + LOCK SAFE)
+========================================================= */
 export const markBulkAttendance = async (req, res) => {
-  console.log("🔥 markBulkAttendance HIT");
-
   try {
     const { records, date } = req.body;
 
-    if (!Array.isArray(records) || records.length === 0) {
-      return res.status(400).json({ msg: "Attendance records are required" });
+    if (!req.user) {
+      return res.status(401).json({ msg: "Unauthorized" });
     }
 
-    const allowedStatuses = ["present", "absent", "leave", "late"];
-
-    const attendanceDate = date ? new Date(date) : new Date();
+    const attendanceDate = new Date(date);
     attendanceDate.setHours(0, 0, 0, 0);
 
-    const bulkOps = records
-      .map(({ userId, status, note }) => {
-        if (!userId || !allowedStatuses.includes(status?.toLowerCase()))
-          return null;
+    const bulkOps = [];
 
-        return {
-          updateOne: {
-            filter: { user: userId, date: attendanceDate },
-            update: {
-              $set: {
-                status: status.toLowerCase(),
-                note,
-                markedBy: req.user._id,
-                date: attendanceDate,
-              },
+    for (const { userId, status, note } of records) {
+      const existing = await AttendanceModel.findOne({
+        user: userId,
+        date: attendanceDate,
+      });
+
+      if (existing?.isLocked) continue;
+
+      bulkOps.push({
+        updateOne: {
+          filter: { user: userId, date: attendanceDate },
+          update: {
+            $set: {
+              status,
+              note,
+              markedBy: req.user._id,
+              isLocked: ["leave", "holiday"].includes(status),
             },
-            upsert: true,
           },
-        };
-      })
-      .filter(Boolean);
+          upsert: true,
+        },
+      });
+    }
 
     if (!bulkOps.length) {
-      return res.status(400).json({ msg: "No valid attendance records" });
+      return res.status(200).json({
+        msg: "No records updated (all locked or invalid)",
+      });
     }
 
     await AttendanceModel.bulkWrite(bulkOps);
 
-    return res.status(200).json({
-      msg: "Attendance marked successfully",
+    res.status(200).json({
+      msg: "Attendance saved successfully",
       total: bulkOps.length,
     });
-  } catch (error) {
-    console.error("❌ BULK ATTENDANCE ERROR:", error);
-    return res.status(500).json({ msg: error.message });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
   }
 };
+
+/* =========================================================
+   GET ATTENDANCE BY DATE (PAGINATED + ROLE SAFE)
+========================================================= */
 export const getAttendanceByDate = async (req, res) => {
   try {
-    const { date } = req.query;
-    const user = req.user; // from authMiddleware
+    const { date, page = 1, limit = 10 } = req.query;
+    const user = req.user;
 
     if (!date) {
       return res.status(400).json({
@@ -113,7 +143,6 @@ export const getAttendanceByDate = async (req, res) => {
       });
     }
 
-    // Normalize date (00:00 to 23:59)
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
 
@@ -122,9 +151,8 @@ export const getAttendanceByDate = async (req, res) => {
 
     let userFilter = {};
 
-    // 🔐 ROLE-BASED ACCESS
+    // 🔐 MANAGER ACCESS
     if (user.role === "manager") {
-      // manager → only their department employees
       const users = await UserModel.find({
         department: user.department,
         isDeleted: false,
@@ -134,27 +162,36 @@ export const getAttendanceByDate = async (req, res) => {
       userFilter.user = { $in: users.map((u) => u._id) };
     }
 
-    // owner → sees all users (no filter)
-
-    const attendance = await AttendanceModel.find({
-      date: { $gte: start, $lte: end },
-      ...userFilter,
-    })
-      .populate({
-        path: "user",
-        select: "username email department",
-        populate: {
-          path: "department",
-          select: "name",
+    const result = await pagination({
+      model: AttendanceModel,
+      query: {
+        date: { $gte: start, $lte: end },
+        ...userFilter,
+      },
+      sort: { createdAt: 1 },
+      page: Number(page),
+      limit: Number(limit),
+      populate: [
+        {
+          path: "user",
+          select: "username email department",
+          populate: {
+            path: "department",
+            select: "name",
+          },
         },
-      })
-      .populate("markedBy", "username role")
-      .sort({ "user.username": 1 });
+        {
+          path: "markedBy",
+          select: "username role",
+        },
+      ],
+    });
 
     return res.status(200).json({
       success: true,
-      count: attendance.length,
-      data: attendance,
+      count: result.data.length,
+      meta: result.meta,
+      data: result.data,
     });
   } catch (error) {
     console.error("❌ getAttendanceByDate:", error);

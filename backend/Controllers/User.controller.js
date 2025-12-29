@@ -7,7 +7,7 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
 import { sendSetPasswordEmail } from "../services/email.service.js";
-import { paginate } from "../utils/pagination.js";
+import  pagination  from "../utils/pagination.js";
 export const verifyToken = async (req, res) => {
   try {
     const { email, token } = req.query;
@@ -97,7 +97,7 @@ export const setPassword = async (req, res) => {
     });
   }
 };
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {  
   try {
     const { email, password } = req.body;
 

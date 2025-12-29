@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import axios from "axios";
-// import api from "../axios/axios.jsx";
+import { useNavigate } from "react-router-dom";
 
 const SetPassword = ({ data }) => {
   const { userName, email, token } = data;
@@ -12,9 +12,10 @@ const SetPassword = ({ data }) => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setmessage] = useState("");
 
-  const submitHandler = (e) => {
+  const navigate = useNavigate();
+
+  const submitHandler = async (e) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -24,28 +25,26 @@ const SetPassword = ({ data }) => {
 
     setError("");
     setLoading(true);
-    axios
-      .patch("http://localhost:5000/user/setpassword", {
+
+    try {
+      await axios.patch("http://localhost:5000/user/setpassword", {
         email,
         token,
         password,
-      })
-      .then((e) => {
-        setTimeout(() => {
-          toast.success("Password updated successfully!");
-          console.log("Password set successfully");
-          setLoading(false);
-        }, 1000);
-      })
-      .catch((e) => {
-        setLoading(false);
-        console.log(e.message);
-        toast.error(e.response?.data?.message || "Something went wrong");
       });
+      toast.success("Password updated successfully");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className=" w-full min-h-screen  flex items-center justify-center px-4">
+    <div className="w-full min-h-screen flex items-center justify-center px-4">
       <form
         onSubmit={submitHandler}
         className="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl flex flex-col gap-6"
@@ -57,7 +56,7 @@ const SetPassword = ({ data }) => {
           <p className="text-sm text-gray-500 break-all">{email}</p>
         </div>
 
-        <div className="h-px bg-gray-500" />
+        <div className="h-px bg-gray-300" />
 
         <div className="text-center space-y-1">
           <h3 className="text-xl font-semibold text-gray-700">
@@ -67,6 +66,7 @@ const SetPassword = ({ data }) => {
             Choose a strong and secure password
           </p>
         </div>
+
         <div className="flex flex-col gap-4">
           {/* Password */}
           <div className="relative">
@@ -83,7 +83,7 @@ const SetPassword = ({ data }) => {
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((prev) => !prev)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -97,8 +97,7 @@ const SetPassword = ({ data }) => {
             minLength={6}
             maxLength={10}
             placeholder="Confirm Password"
-            className={`border rounded-lg px-4 py-2.5 text-sm
-              focus:outline-none focus:ring-2
+            className={`border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2
               ${
                 error
                   ? "border-red-400 focus:ring-red-400"
@@ -110,6 +109,7 @@ const SetPassword = ({ data }) => {
         </div>
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
         <button
           type="submit"
           disabled={loading}

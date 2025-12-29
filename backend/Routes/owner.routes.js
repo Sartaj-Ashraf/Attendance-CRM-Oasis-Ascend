@@ -5,13 +5,13 @@ import {
   disableaccount,
   editUser,
   activateaccount,
-  assignRole,
   deleteUser,
   getAllDepartmentUser,
   getBlockedUser,
   GetAllEmployee,
   GetManagers,
   BlockedUsers,
+  replaceManager,
 } from "../Controllers/owner.controller.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
@@ -22,7 +22,7 @@ router.post("/create", authMiddleware, isAdmin, createUser); // creating user
 router.post("/edituser/:id", authMiddleware, isAdmin, editUser); // edit user
 router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user
 router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
-router.patch("/assign-role/:id", authMiddleware, assignRole);
+router.patch("/manager/replace/:id", authMiddleware, replaceManager);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
 router.post("/attendance/bulk", authMiddleware, markBulkAttendance);
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);
@@ -31,4 +31,5 @@ router.get("/getAllEmployee", authMiddleware, isAdmin, GetAllEmployee);
 router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 router.get("/getManagers", authMiddleware, isAdmin, GetManagers);
 router.get("/getBlockedUsers", authMiddleware, isAdmin, BlockedUsers);
+
 export default router;

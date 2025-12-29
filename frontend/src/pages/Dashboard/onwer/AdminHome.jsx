@@ -40,6 +40,12 @@ const AdminHome = () => {
             color="border-purple-600"
             onClick={() => navigate("/owner/attendance")}
           />
+          <ActionCard
+            title="Manage leaves"
+            description="View and manage leaves records"
+            color="border-purple-600"
+            onClick={() => navigate("/owner/manage-leaves")}
+          />
         </div>
       </div>
 

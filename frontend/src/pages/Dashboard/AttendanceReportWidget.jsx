@@ -1,27 +1,37 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 // import api from "../../../axios/axios";
 import api from "../../axios/axios.js";
+import SearchFilter from "../../components/filters/SearchFilter";
 
 const AttendanceReportWidget = () => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 🔹 filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("");
 
-  /* ================= FETCH FROM BACKEND ================= */
+  // 🔹 departments
+  const [departments, setDepartments] = useState([]);
+
+  // 🔹 pagination (ADDED BACK)
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [meta, setMeta] = useState(null);
+
+  /* ================= FETCH ATTENDANCE ================= */
   const fetchAttendance = async () => {
     try {
       setLoading(true);
 
       const res = await api.get("/api/GetAttendanceByDate", {
-        params: { date },
+        params: { date, page, limit },
       });
 
       setData(res.data.data || []);
+      setMeta(res.data.meta || null);
 
       if (!res.data.data || res.data.data.length === 0) {
         toast("No attendance found for this date");
@@ -34,51 +44,48 @@ const AttendanceReportWidget = () => {
     }
   };
 
+  /* ================= FETCH DEPARTMENTS ================= */
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get("/department/get");
+      setDepartments(res.data || []);
+    } catch {
+      toast.error("Failed to fetch departments");
+    }
+  };
+
+  /* ================= EFFECTS ================= */
   useEffect(() => {
     fetchAttendance();
+  }, [date, page]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  // reset page when date changes
+  useEffect(() => {
+    setPage(1);
   }, [date]);
 
   /* ================= FILTERED DATA ================= */
-const filteredData = useMemo(() => {
-  return data
-    .filter((row) => row.user) // 🔒 HARD GUARD
-    .filter((row) => {
-      const username = row.user?.username?.toLowerCase() || "";
-      const email = row.user?.email?.toLowerCase() || "";
+  const filteredData = useMemo(() => {
+    return data
+      .filter((row) => row.user)
+      .filter((row) => {
+        const username = row.user?.username?.toLowerCase() || "";
+        const email = row.user?.email?.toLowerCase() || "";
 
-      const matchesSearch =
-        username.includes(searchTerm.toLowerCase()) ||
-        email.includes(searchTerm.toLowerCase());
+        const matchesSearch =
+          username.includes(searchTerm.toLowerCase()) ||
+          email.includes(searchTerm.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "all" || row.status === statusFilter;
+        const matchesDepartment =
+          !departmentFilter || row.user?.department?._id === departmentFilter;
 
-      const matchesDepartment =
-        departmentFilter === "all" ||
-        row.user?.department?.name === departmentFilter;
-
-      return matchesSearch && matchesStatus && matchesDepartment;
-    });
-}, [data, searchTerm, statusFilter, departmentFilter]);
-
-  /* ================= SUMMARY ================= */
-  const summary = useMemo(
-    () => ({
-      total: data?.length,
-      present: data.filter((d) => d.status === "present").length,
-      absent: data.filter((d) => d.status === "absent").length,
-      late: data.filter((d) => d.status === "late").length,
-      leave: data.filter((d) => d.status === "leave").length,
-    }),
-    [data]
-  );
-
-  /* ================= UNIQUE DEPARTMENTS ================= */
-  const departments = useMemo(() => {
-    return [...new Set(data.map((d) => d?.user?.department?.name))].filter(
-      Boolean
-    );
-  }, [data]);
+        return matchesSearch && matchesDepartment;
+      });
+  }, [data, searchTerm, departmentFilter]);
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-6">
@@ -97,65 +104,33 @@ const filteredData = useMemo(() => {
         />
       </div>
 
-      {/* SUMMARY */}
-      <div className="flex gap-6 mb-6 text-sm font-medium">
-        <span className="text-green-600">Present: {summary.present}</span>
-        <span className="text-red-600">Absent: {summary.absent}</span>
-        <span className="text-yellow-600">Late: {summary.late}</span>
-        <span className="text-purple-600">Leave: {summary.leave}</span>
-      </div>
-
-      {/* FILTERS */}
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <input
-          type="text"
-          placeholder="Search name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border px-3 py-2 rounded-lg flex-1"
-        />
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border px-3 py-2 rounded-lg"
-        >
-          <option value="all">All Status</option>
-          <option value="present">Present</option>
-          <option value="absent">Absent</option>
-          <option value="late">Late</option>
-          <option value="leave">Leave</option>
-        </select>
-
-        <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="border px-3 py-2 rounded-lg"
-        >
-          <option value="all">All Departments</option>
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* SEARCH + FILTER */}
+      <SearchFilter
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectValue={departmentFilter}
+        onSelectChange={setDepartmentFilter}
+        selectOptions={departments}
+        optionLabel="name"
+        optionValue="_id"
+        searchPlaceholder="Search name or email..."
+      />
 
       {/* TABLE */}
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="mt-6 overflow-x-auto border rounded-lg">
         <table className="w-full text-sm border-collapse">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-3 text-left align-middle">Employee</th>
-              <th className="px-4 py-3 text-center align-middle">Department</th>
-              <th className="px-4 py-3 text-center align-middle">Status</th>
+              <th className="px-4 py-3 text-left">Employee</th>
+              <th className="px-4 py-3 text-center">Department</th>
+              <th className="px-4 py-3 text-center">Status</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="3" className="text-center py-8 text-gray-500">
+                <td colSpan="3" className="text-center py-8">
                   Loading...
                 </td>
               </tr>
@@ -167,47 +142,18 @@ const filteredData = useMemo(() => {
               </tr>
             ) : (
               filteredData.map((row) => (
-                <tr
-                  key={row._id}
-                  className="border-t hover:bg-gray-50 transition m-1"
-                >
-                  {/* EMPLOYEE */}
-                  <td className="px-4 py-4 align-middle m-1">
-                    <p className="font-medium text-gray-800">
-                      {row.user.username}
-                    </p>
+                <tr key={row._id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-4">
+                    <p className="font-medium">{row.user.username}</p>
                     <p className="text-xs text-gray-500">{row.user.email}</p>
                   </td>
 
-                  {/* DEPARTMENT */}
-                  <td className="px-4 py-4 text-center align-middle">
-                    {row.user.department?.name ? (
-                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                        {row.user.department.name}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 italic text-xs">
-                        Not assigned
-                      </span>
-                    )}
+                  <td className="px-4 py-4 text-center">
+                    {row.user.department?.name || "—"}
                   </td>
 
-                  {/* STATUS */}
-                  <td className="px-4 py-4 text-center align-middle">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold
-                  ${
-                    row.status === "present"
-                      ? "bg-green-100 text-green-700"
-                      : row.status === "absent"
-                      ? "bg-red-100 text-red-700"
-                      : row.status === "late"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-purple-100 text-purple-700"
-                  }`}
-                    >
-                      {row.status}
-                    </span>
+                  <td className="px-4 py-4 text-center capitalize">
+                    {row.status}
                   </td>
                 </tr>
               ))
@@ -215,6 +161,33 @@ const filteredData = useMemo(() => {
           </tbody>
         </table>
       </div>
+
+      {/* PAGINATION UI */}
+      {meta && (
+        <div className="flex justify-between items-center mt-6 text-sm">
+          <span>
+            Page {meta.page} of {meta.totalPages}
+          </span>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => p - 1)}
+              disabled={!meta.hasPrev}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!meta.hasNext}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

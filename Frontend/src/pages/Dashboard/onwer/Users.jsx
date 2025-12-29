@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../axios/axios";
-
 import UserRow from "../../../components/admin/Userdetail";
 import ConfirmModal from "../../../components/confrim/ConfirmModal";
 import AddUser from "./AddUser";
@@ -9,6 +8,8 @@ import SearchFilter from "../../../components/filters/SearchFilter";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState(null);
@@ -16,51 +17,75 @@ const Users = () => {
 
   const [showAddUser, setShowAddUser] = useState(false);
 
+  // filters
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
+  const [verification, setVerification] = useState("all");
+
+  // pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 30;
+
+  /* ================= FETCH DEPARTMENTS ================= */
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get("/department/get");
+      setDepartments(res.data || []);
+    } catch {
+      toast.error("Failed to fetch departments");
+    }
+  };
+
+  const departmentOptions = useMemo(() => departments, [departments]);
+
+  /* ================= RESET PAGE WHEN FILTER CHANGES ================= */
+  useEffect(() => {
+    setPage(1);
+  }, [department, search, verification]);
 
   /* ================= FETCH USERS ================= */
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page, department]);
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get("/owner/getAllEmployee");
-      setUsers(res.data.employees || []);
-    } catch {
-      toast.error("Failed to fetch users");
+      const res = await api.get("/owner/getAllEmployee", {
+        params: {
+          page,
+          limit,
+          department: department || undefined,
+        },
+      });
+
+      setUsers(res.data.data || []);
+      setTotalPages(res.data.meta?.totalPages || 1);
+    } catch (error) {
+      console.error("Fetch users error:", error);
+      toast.error(error?.response?.data?.message || "Failed to fetch users");
     }
   };
 
-  /* ================= DEPARTMENT OPTIONS ================= */
-  const departmentOptions = useMemo(() => {
-    const map = new Map();
-
-    users.forEach((u) => {
-      if (u.department?._id) {
-        map.set(u.department._id, u.department);
-      }
-    });
-
-    return Array.from(map.values());
-  }, [users]);
-
-  /* ================= FILTER USERS ================= */
+  /* ================= FILTERED USERS ================= */
   const visibleUsers = useMemo(() => {
     return users.filter((user) => {
-      if (!user.isActive) return false;
-
-      const matchSearch =
+      const matchesSearch =
         user.username?.toLowerCase().includes(search.toLowerCase()) ||
         user.email?.toLowerCase().includes(search.toLowerCase());
 
-      const matchDepartment =
-        !department || user?.department?.name === department;
+      const matchesVerification =
+        verification === "all" ||
+        (verification === "verified" && user.isEmailVerified === true) ||
+        (verification === "unverified" && user.isEmailVerified === false);
 
-      return matchSearch && matchDepartment;
+      return matchesSearch && matchesVerification;
     });
-  }, [users, search, department]);
+  }, [users, search, verification]);
 
   /* ================= CONFIRM MODAL ================= */
   const openConfirm = (type, user) => {
@@ -84,17 +109,11 @@ const Users = () => {
 
       if (actionType === "delete") {
         await api.post(`/owner/deleteUser/${selectedUser._id}`);
-        setUsers((prev) => prev.filter((u) => u._id !== selectedUser._id));
         toast.success("User deleted");
       }
 
       if (actionType === "block") {
         await api.patch(`/owner/disableaccount/${selectedUser._id}`);
-        setUsers((prev) =>
-          prev.map((u) =>
-            u._id === selectedUser._id ? { ...u, isActive: false } : u
-          )
-        );
         toast.warning("User blocked");
       }
 
@@ -102,15 +121,10 @@ const Users = () => {
         await api.patch(`/owner/assign-role/${selectedUser._id}`, {
           role: "manager",
         });
-
-        setUsers((prev) =>
-          prev.map((u) =>
-            u._id === selectedUser._id ? { ...u, role: "manager" } : u
-          )
-        );
-
         toast.success("User promoted to Manager");
       }
+
+      fetchUsers();
     } catch {
       toast.error("Action failed");
     } finally {
@@ -118,7 +132,7 @@ const Users = () => {
     }
   };
 
-  /* ================= RESEND EMAIL ================= */
+  /* ================= RESEND VERIFICATION ================= */
   const resendVerification = async (user) => {
     try {
       await api.post(`/owner/resend-verification/${user._id}`);
@@ -130,9 +144,9 @@ const Users = () => {
 
   return (
     <div className="p-6 relative">
-      {/* ===== HEADER ===== */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-800">Employees</h1>
 
           <SearchFilter
@@ -141,6 +155,10 @@ const Users = () => {
             selectValue={department}
             onSelectChange={setDepartment}
             selectOptions={departmentOptions}
+            optionLabel="name"
+            optionValue="_id"
+            verificationValue={verification}
+            onVerificationChange={setVerification}
             searchPlaceholder="Search name or email..."
             debounceDelay={500}
           />
@@ -148,13 +166,13 @@ const Users = () => {
 
         <button
           onClick={() => setShowAddUser(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
         >
-          Add User
+          Add Employee
         </button>
       </div>
 
-      {/* ===== TABLE ===== */}
+      {/* TABLE */}
       <div className="bg-white shadow-md rounded-xl overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-100 text-left">
@@ -172,7 +190,7 @@ const Users = () => {
             {visibleUsers.length === 0 ? (
               <tr>
                 <td colSpan="6" className="text-center py-6 text-gray-500">
-                  No active users found
+                  No users found
                 </td>
               </tr>
             ) : (
@@ -193,9 +211,33 @@ const Users = () => {
             )}
           </tbody>
         </table>
+
+        {/* PAGINATION */}
+        <div className="flex items-center justify-between py-4 px-6 border-t">
+          <span className="text-sm">
+            Page <b>{page}</b> of <b>{totalPages}</b>
+          </span>
+
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ===== CONFIRM MODAL ===== */}
+      {/* CONFIRM MODAL */}
       {modalOpen && selectedUser && (
         <ConfirmModal
           title={
@@ -212,13 +254,13 @@ const Users = () => {
         />
       )}
 
-      {/* ===== ADD USER MODAL ===== */}
+      {/* ADD USER MODAL */}
       {showAddUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl w-full max-w-2xl p-6 relative">
             <button
               onClick={() => setShowAddUser(false)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+              className="absolute top-3 right-3"
             >
               ✕
             </button>

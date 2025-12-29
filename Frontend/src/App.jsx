@@ -1,5 +1,5 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import {  Toaster } from "sonner";
+import { Toaster } from "sonner";
 
 import Login from "./pages/Login.jsx";
 
@@ -25,14 +25,18 @@ import Allmanagers from "./pages/Dashboard/onwer/Allmanagers.jsx";
 import BlockedUsers from "./pages/Dashboard/onwer/BlockedUsers.jsx";
 import Navbar from "./components/Navbar.jsx";
 import { ViewManagers } from "./pages/Dashboard/Manager/ViewManagers.jsx";
+import OwnerSettings from "./pages/OwnerSettings.jsx";
+import UserSettings from "./pages/UserSettings.jsx";
+import ApplyLeave from "./components/ApplyLeave.jsx";
+import ManageLeaves from "./components/ManageLeaves.jsx";
 const router = createBrowserRouter([
   {
     path: "/test3",
-    element: <ViewManagers />,
+    element: <ApplyLeave />,
   },
   {
     path: "/test",
-    element: <Navbar />,
+    element: <ManageLeaves />,
   },
   {
     path: "/test2",
@@ -75,6 +79,10 @@ const router = createBrowserRouter([
         path: "attendance",
         element: <Attendance />,
       },
+      {
+        path: "settings",
+        element: <UserSettings />,
+      },
     ],
   },
   {
@@ -97,6 +105,10 @@ const router = createBrowserRouter([
       {
         path: "employees",
         element: <ManagerEmployees />,
+      },
+      {
+        path: "settings",
+        element: <UserSettings />,
       },
     ],
   },
@@ -134,18 +146,23 @@ const router = createBrowserRouter([
         element: <BlockedUsers />,
       },
       { path: "reports", element: <AttendanceReportWidget /> },
+      {
+        path: "settings",
+        element: <OwnerSettings />,
+      },
+      {
+        path: "manage-leaves",
+        element: <ManageLeaves />,
+      },
     ],
   },
-
-
 ]);
 
 const App = () => {
   return (
     <>
-           <Toaster richColors position="top-right" />
-     
-     
+      <Toaster richColors position="top-right" />
+
       <RouterProvider router={router} />
     </>
   );

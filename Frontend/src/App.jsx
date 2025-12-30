@@ -31,8 +31,12 @@ import OwnerSettings from "./pages/OwnerSettings.jsx";
 import UserSettings from "./pages/UserSettings.jsx";
 import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
+import EditComponent from "./pages/Dashboard/EditComponent.jsx"
 const router = createBrowserRouter([
-  {
+   {
+    path: "/test4",
+    element: <EditComponent />,
+  },{
     path: "/test3",
     element: <ApplyLeave />,
   },

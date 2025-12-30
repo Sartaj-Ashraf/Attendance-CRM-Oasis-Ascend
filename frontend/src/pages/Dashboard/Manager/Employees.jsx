@@ -209,7 +209,7 @@ const ManagerEmployees = () => {
 
       {/* ===== CONFIRM MODAL ===== */}
       {showConfirm && (
-        <ConfirmModal
+        <ConfirmModel
           title="Confirm Action"
           message={`Are you sure you want to block ${selectedEmployee?.username}?`}
           onConfirm={handleConfirmAction}

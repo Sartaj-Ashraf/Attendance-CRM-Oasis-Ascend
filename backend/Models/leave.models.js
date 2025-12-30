@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 const leaveSchema = new mongoose.Schema(
   {
     user: {
@@ -26,6 +26,12 @@ const leaveSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
       index: true,
+    },
+
+    // ✅ NEW FIELD
+    isPaid: {
+      type: Boolean,
+      default: null, // null = not decided yet
     },
 
     approvedBy: {

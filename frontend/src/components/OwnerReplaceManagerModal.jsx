@@ -67,10 +67,11 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
     }
 
     try {
-      await api.patch("/owner/manager/replace", {
-        oldManagerId: manager._id,
-        newManagerId: selectedUser,
-      });
+      await api.patch(
+        `/owner/manager/replace/${selectedUser}`, // 👈 new manager ID
+        {},
+        { withCredentials: true }
+      );
 
       toast.success("Manager replaced successfully");
       onSuccess();

@@ -118,6 +118,22 @@ export const createUser = async (req, res) => {
     });
   }
 };
+export const getAllEmployees = async (req, res) => {
+  try {
+    const users = await UserModel.find({
+      role: "employee",
+      isDeleted: false,
+    })
+      .populate("department")
+      .sort({ username: 1 }); // A–Z
+
+    res.status(200).json({
+      data: users,
+    });
+  } catch (err) {
+    res.status(500).json({ msg: "Failed to fetch employees" });
+  }
+};
 
 export const editUser = async (req, res) => {
   try {
@@ -246,32 +262,32 @@ export const replaceManager = async (req, res) => {
     const { id: newManagerId } = req.params;
 
     if (!newManagerId) {
-      return res.status(400).json({ msg: "User ID is required" });
+      return res.status(400).json({ msg: "New manager ID is required" });
     }
 
-    //  Find new manager candidate
+    // 1️⃣ Find new manager candidate
     const newManager = await UserModel.findById(newManagerId);
-    if (!newManager) {
+    if (!newManager || newManager.isDeleted) {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // Find existing manager in SAME department
+    // 2️⃣ Find existing manager in same department
     const previousManager = await UserModel.findOne({
       role: "manager",
       department: newManager.department,
       isDeleted: false,
     });
 
-    // If same user already manager
+    // 3️⃣ If same user already manager
     if (previousManager && previousManager._id.equals(newManager._id)) {
       return res.status(400).json({
         msg: "User is already the manager of this department",
       });
     }
 
-    //    If previous manager exists
+    // 4️⃣ Reassign reporting users
     if (previousManager) {
-      await User.updateMany(
+      await UserModel.updateMany(
         {
           reportingManager: previousManager._id,
           isDeleted: false,
@@ -279,19 +295,19 @@ export const replaceManager = async (req, res) => {
         { $set: { reportingManager: newManager._id } }
       );
 
-      // 2️⃣ Demote old manager
+      // Demote old manager
       previousManager.role = "employee";
       previousManager.reportingManager = newManager._id;
       await previousManager.save();
     }
 
-    // 3️⃣ Promote new manager
+    // 5️⃣ Promote new manager
     newManager.role = "manager";
     newManager.reportingManager = null;
     await newManager.save();
 
     return res.status(200).json({
-      msg: "Manager assigned successfully",
+      msg: "Manager replaced successfully",
       data: {
         newManager: {
           id: newManager._id,
@@ -312,19 +328,7 @@ export const replaceManager = async (req, res) => {
       error: error.message,
     });
   }
-
-  user.role = role;
-  await user.save();
-
-  // 200 → Success
-  return res.status(200).json({
-    msg: "Role assigned successfully",
-    user: {
-      id: user._id,
-      role: user.role,
-    },
-  });
-} 
+};
 
 // export const getAllUsers = async (req, res) => {
 //   try {

@@ -15,7 +15,8 @@ router.post("/apply", authMiddleware, applyLeave);
 
 /* MANAGER / OWNER */
 router.get("/all", authMiddleware, getAllLeaves);
-router.patch("/:leaveId/approve", authMiddleware, approveLeave);
-router.patch("/:leaveId/reject", authMiddleware, rejectLeave);
+router.patch(" /approve/:leaveId", authMiddleware, approveLeave);
+
+router.patch("/reject/:leaveId", authMiddleware, rejectLeave);
 
 export default router;

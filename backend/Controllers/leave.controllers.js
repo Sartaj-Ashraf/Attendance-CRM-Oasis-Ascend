@@ -32,17 +32,16 @@ export const applyLeave = async (req, res) => {
   }
 };
 
-/* =====================================================
-   GET ALL LEAVES (MANAGER / OWNER)
-===================================================== */
-
-
-/* =====================================================
-   APPROVE LEAVE
-===================================================== */
 export const approveLeave = async (req, res) => {
   try {
     const { leaveId } = req.params;
+    const { isPaid } = req.body;
+
+    if (typeof isPaid !== "boolean") {
+      return res.status(400).json({
+        message: "isPaid must be true or false",
+      });
+    }
 
     const leave = await Leave.findById(leaveId);
     if (!leave) {
@@ -56,6 +55,7 @@ export const approveLeave = async (req, res) => {
     }
 
     leave.status = "approved";
+    leave.isPaid = isPaid; // ✅ decision made here
     leave.approvedBy = req.user._id;
 
     await leave.save();
@@ -91,6 +91,7 @@ export const rejectLeave = async (req, res) => {
     }
 
     leave.status = "rejected";
+    leave.isPaid = false; // optional but safe
     leave.approvedBy = req.user._id;
 
     await leave.save();
@@ -106,6 +107,7 @@ export const rejectLeave = async (req, res) => {
     });
   }
 };
+
 // controllers/leave.controller.js
 export const getAllLeaves = async (req, res) => {
   try {

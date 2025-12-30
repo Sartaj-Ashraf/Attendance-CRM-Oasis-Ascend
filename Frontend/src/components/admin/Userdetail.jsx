@@ -54,9 +54,8 @@ const UserRow = ({
       </td>
 
       {/* ACTIONS */}
-      <td className="px-6 py-4">
+      <td className=" py-4">
         <div className="flex flex-wrap gap-2 bg-gray-100 p-2 rounded-lg w-fit">
-          {/* Edit */}
           <button
             onClick={() => onEdit?.(user)}
             className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"

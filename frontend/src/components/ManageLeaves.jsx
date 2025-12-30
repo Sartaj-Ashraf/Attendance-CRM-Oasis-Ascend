@@ -25,16 +25,35 @@ const ManageLeaves = () => {
   }, []);
 
   /* ================= ACTIONS ================= */
-  const updateStatus = async (leaveId, action) => {
+  const approveLeave = async (leaveId, isPaid) => {
     try {
       setActionLoading(leaveId);
 
-      await api.patch(`/leave/${leaveId}/${action}`);
+      await api.patch(`/leave/approve/${leaveId}`, {
+        isPaid,
+      });
 
-      toast.success(`Leave ${action}ed successfully`);
+      toast.success(
+        `Leave approved (${isPaid ? "Paid" : "Unpaid"})`
+      );
       fetchLeaves();
     } catch (err) {
-      toast.error("Action failed");
+      toast.error("Failed to approve leave");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const rejectLeave = async (leaveId) => {
+    try {
+      setActionLoading(leaveId);
+
+      await api.patch(`/leave/reject/${leaveId}`);
+
+      toast.success("Leave rejected successfully");
+      fetchLeaves();
+    } catch (err) {
+      toast.error("Failed to reject leave");
     } finally {
       setActionLoading(null);
     }
@@ -46,7 +65,9 @@ const ManageLeaves = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Leave Requests</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Leave Requests
+      </h1>
 
       <div className="bg-white rounded-xl shadow overflow-x-auto">
         <table className="w-full text-sm">
@@ -106,30 +127,46 @@ const ManageLeaves = () => {
                           : leave.status === "rejected"
                           ? "bg-red-100 text-red-700"
                           : "bg-yellow-100 text-yellow-700"
-                      }
-                    `}
+                      }`}
                   >
                     {leave.status}
                   </span>
+
+                  {/* Show Paid/Unpaid after approval */}
+                  {leave.status === "approved" && (
+                    <div className="text-xs mt-1 text-gray-500">
+                      {leave.isPaid ? "Paid Leave" : "Unpaid Leave"}
+                    </div>
+                  )}
                 </td>
 
                 <td className="px-6 py-4">
                   {leave.status === "pending" ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         disabled={actionLoading === leave._id}
                         onClick={() =>
-                          updateStatus(leave._id, "approve")
+                          approveLeave(leave._id, true)
                         }
                         className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs disabled:opacity-60"
                       >
-                        Approve
+                        Approve (Paid)
                       </button>
 
                       <button
                         disabled={actionLoading === leave._id}
                         onClick={() =>
-                          updateStatus(leave._id, "reject")
+                          approveLeave(leave._id, false)
+                        }
+                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs disabled:opacity-60"
+                      >
+                        Approve (Unpaid)
+                      </button>
+
+                      <button
+                        disabled={actionLoading === leave._id}
+                        onClick={() =>
+                          rejectLeave(leave._id)
                         }
                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs disabled:opacity-60"
                       >
@@ -137,9 +174,7 @@ const ManageLeaves = () => {
                       </button>
                     </div>
                   ) : (
-                    <span className="text-xs text-gray-400">
-                      —
-                    </span>
+                    <span className="text-xs text-gray-400">—</span>
                   )}
                 </td>
               </tr>

@@ -11,7 +11,7 @@ const AdminDashboard = () => {
       {/* MAIN CONTENT (OFFSET BY SIDEBAR WIDTH) */}
       <div className="ml-60 min-h-screen flex flex-col">
         {/* Optional Topbar */}
-        <Topbar />
+        {/* <Topbar /> */}
 
         <main
           className="flex-1 p-8 overflow-y-auto "

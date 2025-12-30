@@ -43,6 +43,20 @@ const AttendanceReportWidget = () => {
       setLoading(false);
     }
   };
+  const getStatusClasses = (status) => {
+    switch (status) {
+      case "present":
+        return "bg-green-100 text-green-700 border-green-300";
+      case "absent":
+        return "bg-red-100 text-red-700 border-red-300";
+      case "late":
+        return "bg-yellow-100 text-yellow-700 border-yellow-300";
+      case "leave":
+        return "bg-blue-100 text-blue-700 border-blue-300";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-300";
+    }
+  };
 
   /* ================= FETCH DEPARTMENTS ================= */
   const fetchDepartments = async () => {
@@ -152,8 +166,14 @@ const AttendanceReportWidget = () => {
                     {row.user.department?.name || "—"}
                   </td>
 
-                  <td className="px-4 py-4 text-center capitalize">
-                    {row.status}
+                  <td className="px-4 py-4  text-center">
+                    <span
+                      className={`px-3 py-1 text-m font-semibold rounded-full border capitalize inline-block ${getStatusClasses(
+                        row.status
+                      )}`}
+                    >
+                      {row.status}
+                    </span>
                   </td>
                 </tr>
               ))

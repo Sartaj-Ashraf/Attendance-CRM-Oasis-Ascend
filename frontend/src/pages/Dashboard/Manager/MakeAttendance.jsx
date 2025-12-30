@@ -3,8 +3,6 @@ import { toast } from "sonner";
 import api from "../../../axios/axios.js";
 import ConfirmModal from "../../../components/confrim/ConfirmModal.jsx";
 
-const LIMIT = 30;
-
 const MakeAttendance = () => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
@@ -14,9 +12,7 @@ const MakeAttendance = () => {
   const [employees, setEmployees] = useState([]);
   const [attendance, setAttendance] = useState({});
 
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
+  const [attendanceLoaded, setAttendanceLoaded] = useState(false);
   const [showHolidayConfirm, setShowHolidayConfirm] = useState(false);
 
   const isSunday = new Date(date).getDay() === 0;
@@ -26,65 +22,76 @@ const MakeAttendance = () => {
     try {
       const res =
         user.role === "owner"
-          ? await api.get("/owner/getAllEmployee", {
-              params: { page, limit: LIMIT },
-            })
+          ? await api.get("/owner/getAllEmployees")
           : await api.get("/owner/getAllUsers", {
-              params: {
-                department: user.department?._id,
-                page,
-                limit: LIMIT,
-              },
+              params: { department: user.department?._id },
             });
 
       setEmployees(res.data?.data || []);
-      setTotalPages(res.data?.meta?.totalPages || 1);
-    } catch {
+    } catch (err) {
       toast.error("Failed to load employees");
     }
   };
 
   /* ================= FETCH ATTENDANCE ================= */
   const fetchAttendanceByDate = async (selectedDate) => {
-    const res = await api.get("/api/GetAttendanceByDate", {
-      params: { date: selectedDate },
-    });
+    try {
+      const res = await api.get("/api/GetAttendanceByDate", {
+        params: { date: selectedDate },
+      });
 
-    const map = {};
-    res.data?.data?.forEach((row) => {
-      map[row.user._id] = {
-        status: row.status,
-        note: row.note || "",
-        isLocked: row.isLocked || false,
-      };
-    });
+      const map = {};
+      res.data?.data?.forEach((row) => {
+        if (!row.user?._id) return;
 
-    // ✅ MERGE — DO NOT REPLACE (pagination safe)
-    setAttendance((prev) => ({ ...prev, ...map }));
+        map[row.user._id] = {
+          status: row.status,
+          note: row.note || "",
+          isLocked: row.isLocked || false,
+        };
+      });
+
+      setAttendance(map);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load attendance");
+    }
   };
 
   /* ================= INIT ================= */
   useEffect(() => {
     (async () => {
-      const res = await api.get("/api/isAuth");
-      setAuthUser(res.data.user);
-      await fetchEmployees(res.data.user);
-      await fetchAttendanceByDate(date);
-      setLoading(false);
+      try {
+        const res = await api.get("/api/isAuth");
+        setAuthUser(res.data.user);
+        await fetchEmployees(res.data.user);
+      } catch {
+        toast.error("Auth failed");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
+  /* ================= AUTO LOAD ATTENDANCE ON REFRESH ================= */
   useEffect(() => {
-    if (authUser) fetchEmployees(authUser);
-  }, [page]);
+    if (!authUser || employees.length === 0) return;
 
-  useEffect(() => {
     fetchAttendanceByDate(date);
-  }, [date]);
+    setAttendanceLoaded(true);
+  }, [authUser, employees, date]);
+
+  /* ================= MANUAL VIEW ================= */
+  const handleViewAttendance = async () => {
+    setLoading(true);
+    await fetchAttendanceByDate(date);
+    setAttendanceLoaded(true);
+    setLoading(false);
+  };
 
   /* ================= AUTO SUNDAY ================= */
   useEffect(() => {
-    if (!isSunday || employees.length === 0) return;
+    if (!isSunday || !attendanceLoaded) return;
 
     const holidayMap = {};
     employees.forEach((emp) => {
@@ -95,8 +102,8 @@ const MakeAttendance = () => {
       };
     });
 
-    setAttendance((prev) => ({ ...prev, ...holidayMap }));
-  }, [isSunday, employees]);
+    setAttendance(holidayMap);
+  }, [isSunday, attendanceLoaded, employees]);
 
   /* ================= FILTER ================= */
   const filteredEmployees = useMemo(() => {
@@ -105,16 +112,33 @@ const MakeAttendance = () => {
     );
   }, [employees, search]);
 
+  /* ================= SUMMARY ================= */
+  const summary = useMemo(() => {
+    const counts = {
+      present: 0,
+      absent: 0,
+      late: 0,
+      leave: 0,
+      total: filteredEmployees.length,
+    };
+
+    filteredEmployees.forEach((emp) => {
+      const status = attendance[emp._id]?.status;
+      if (status && counts[status] !== undefined) {
+        counts[status]++;
+      }
+    });
+
+    return counts;
+  }, [attendance, filteredEmployees]);
+
   /* ================= LOCAL UPDATE ================= */
   const markAttendance = (userId, status) => {
     if (isSunday || attendance[userId]?.isLocked) return;
 
     setAttendance((prev) => ({
       ...prev,
-      [userId]: {
-        ...prev[userId],
-        status,
-      },
+      [userId]: { ...prev[userId], status },
     }));
   };
 
@@ -129,11 +153,9 @@ const MakeAttendance = () => {
 
   /* ================= HOLIDAY ================= */
   const markHolidayForAll = () => {
-    const updated = { ...attendance };
+    const updated = {};
 
     employees.forEach((emp) => {
-      if (attendance[emp._id]?.isLocked) return;
-
       updated[emp._id] = {
         status: "holiday",
         note: "Holiday",
@@ -142,16 +164,13 @@ const MakeAttendance = () => {
     });
 
     setAttendance(updated);
-    toast.success("Marked Holiday for all employees");
+    toast.success("Holiday marked for all employees");
     setShowHolidayConfirm(false);
   };
 
   /* ================= SUBMIT ================= */
   const submitAttendance = async () => {
-    if (isSunday) {
-      toast("Sunday is automatically Holiday");
-      return;
-    }
+    if (isSunday) return toast("Sunday is automatically Holiday");
 
     const records = Object.entries(attendance)
       .filter(([_, v]) => v.status && !v.isLocked)
@@ -161,33 +180,69 @@ const MakeAttendance = () => {
         note: v.note || "",
       }));
 
-    if (!records.length) {
-      toast("No attendance to submit");
-      return;
-    }
+    if (!records.length) return toast("No attendance to submit");
 
-    const res = await api.post("/owner/attendance/bulk", {
-      date,
-      records,
+    try {
+      const res = await api.post("/owner/attendance/bulk", {
+        date,
+        records,
+      });
+
+      toast.success(res.data.msg || "Attendance submitted");
+      handleViewAttendance();
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Submit failed");
+    }
+  };
+
+  /* ================= EXPORT ================= */
+  const exportCSV = () => {
+    let csv = "Name,Department,Status,Note\n";
+
+    filteredEmployees.forEach((emp) => {
+      const a = attendance[emp._id] || {};
+      csv += `${emp.username},${emp.department?.name || ""},${a.status || ""},${
+        a.note || ""
+      }\n`;
     });
 
-    toast.success(res.data.msg || "Attendance submitted");
-    fetchAttendanceByDate(date);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `attendance_${date}.csv`;
+    link.click();
   };
 
   if (loading) return <p className="p-6">Loading…</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Make Attendance</h1>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Make Attendance</h1>
 
-      <div className="flex gap-4 mb-6 items-center">
+      {/* DATE + ACTIONS */}
+      <div className="flex gap-3 items-center">
         <input
           type="date"
           value={date}
+          max={new Date().toISOString().split("T")[0]} //  disables future dates
           onChange={(e) => setDate(e.target.value)}
           className="border px-3 py-2 rounded"
         />
+
+        <button
+          onClick={handleViewAttendance}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          View Attendance
+        </button>
+
+        <button
+          onClick={exportCSV}
+          className="bg-gray-700 text-white px-4 py-2 rounded"
+        >
+          Export
+        </button>
 
         {!isSunday && (
           <>
@@ -202,7 +257,7 @@ const MakeAttendance = () => {
               onClick={submitAttendance}
               className="bg-green-600 text-white px-4 py-2 rounded"
             >
-              Submit Attendance
+              Submit
             </button>
           </>
         )}
@@ -216,6 +271,23 @@ const MakeAttendance = () => {
         />
       </div>
 
+      {/* SUMMARY */}
+      <div className="grid grid-cols-5 gap-4">
+        {[
+          ["Present", summary.present, "bg-green-100 text-green-700"],
+          ["Absent", summary.absent, "bg-red-100 text-red-700"],
+          ["Late", summary.late, "bg-yellow-100 text-yellow-700"],
+          ["Leave", summary.leave, "bg-blue-100 text-blue-700"],
+          ["Total", summary.total, "bg-gray-100 text-gray-700"],
+        ].map(([label, value, color]) => (
+          <div key={label} className={`p-4 rounded ${color}`}>
+            <p className="text-sm">{label}</p>
+            <p className="text-2xl font-bold">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* TABLE */}
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
@@ -240,42 +312,24 @@ const MakeAttendance = () => {
                   </td>
 
                   <td className="px-6 py-4 flex gap-2">
-                    {[
-                      {
-                        key: "present",
-                        label: "present",
-                        color: "bg-green-600 text-white",
-                      },
-                      {
-                        key: "absent",
-                        label: "absent",
-                        color: "bg-red-600 text-white",
-                      },
-                      {
-                        key: "late",
-                        label: "late",
-                        color: "bg-yellow-500 text-white",
-                      },
-                      {
-                        key: "leave",
-                        label: "leave",
-                        color: "bg-blue-600 text-white",
-                      },
-                    ].map(({ key, label, color }) => (
+                    {["present", "absent", "late", "leave"].map((s) => (
                       <button
-                        key={key}
+                        key={s}
                         disabled={current.isLocked}
-                        onClick={() => markAttendance(emp._id, key)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition
-        ${
-          current.status === key
-            ? color
-            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-        }
-        ${current.isLocked ? "opacity-50 cursor-not-allowed" : ""}
-      `}
+                        onClick={() => markAttendance(emp._id, s)}
+                        className={`px-3 py-1 rounded-full text-xs capitalize ${
+                          current.status === s
+                            ? s === "present"
+                              ? "bg-green-600 text-white"
+                              : s === "absent"
+                              ? "bg-red-600 text-white"
+                              : s === "late"
+                              ? "bg-yellow-500 text-white"
+                              : "bg-blue-600 text-white"
+                            : "bg-gray-200"
+                        }`}
                       >
-                        {label}
+                        {s}
                       </button>
                     ))}
                   </td>
@@ -293,29 +347,6 @@ const MakeAttendance = () => {
             })}
           </tbody>
         </table>
-
-        <div className="flex justify-between px-6 py-4 border-t">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="px-3 py-1 border rounded"
-            >
-              Prev
-            </button>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-              className="px-3 py-1 border rounded"
-            >
-              Next
-            </button>
-          </div>
-        </div>
       </div>
 
       {showHolidayConfirm && (

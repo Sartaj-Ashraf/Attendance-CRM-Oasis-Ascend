@@ -12,6 +12,7 @@ import {
   GetManagers,
   BlockedUsers,
   replaceManager,
+  getAllEmployees 
 } from "../Controllers/owner.controller.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
@@ -31,5 +32,7 @@ router.get("/getAllEmployee", authMiddleware, isAdmin, GetAllEmployee);
 router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 router.get("/getManagers", authMiddleware, isAdmin, GetManagers);
 router.get("/getBlockedUsers", authMiddleware, isAdmin, BlockedUsers);
+router.get("/getAllEmployees", authMiddleware, isAdmin, getAllEmployees );
+
 
 export default router;

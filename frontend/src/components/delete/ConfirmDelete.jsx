@@ -22,7 +22,7 @@ const ConfirmDeleteModal = ({
     requiresTyping && confirmValue !== inputValue;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 bg-opacity-50">
       <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
         {/* Title */}
         <h2 className="text-xl font-bold text-red-600 mb-3">

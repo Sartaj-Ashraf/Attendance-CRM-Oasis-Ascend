@@ -324,14 +324,7 @@ export const replaceManager = async (req, res) => {
       role: user.role,
     },
   });
-} catch (e) {
-  // 500 → Server error
-  return res.status(500).json({
-    msg: "Internal server error",
-    error: e.message,
-  });
-}
-};
+} 
 
 // export const getAllUsers = async (req, res) => {
 //   try {

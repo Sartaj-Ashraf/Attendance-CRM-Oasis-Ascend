@@ -32,11 +32,7 @@ const Managers = () => {
   useEffect(() => {
     fetchManagers();
   }, []);
-  const filteredManagers = useMemo(() => {
-    return managers.filter((manager) =>
-      manager?.username?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [managers, DebounceSearch]);
+
   const handleConfirmDemote = async () => {
     try {
       await api.patch(`/owner/demote/${selectedManager._id}`);

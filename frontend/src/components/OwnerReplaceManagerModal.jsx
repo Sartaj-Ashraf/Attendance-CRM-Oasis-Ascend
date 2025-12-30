@@ -12,7 +12,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // 🔹 Fetch department users
+  /* ================= FETCH DEPARTMENT USERS ================= */
   useEffect(() => {
     if (!open || !manager?.department?._id) return;
 
@@ -20,13 +20,20 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
       try {
         setLoading(true);
 
-        const res = await api.get(`/owner/getAllUsers`, {
+        const res = await api.get("/owner/getAllUsers", {
           params: {
             department: manager.department._id,
           },
         });
 
-        setUsers(res.data.data || []);
+        // ✅ FRONTEND-ONLY FILTER
+        // 1. Email verified
+        // 2. NOT current manager
+        const filteredUsers = (res.data?.data || []).filter(
+          (user) => user.isEmailVerified === true && user._id !== manager._id
+        );
+
+        setUsers(filteredUsers);
       } catch (error) {
         toast.error("Failed to load department users");
       } finally {
@@ -37,7 +44,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
     fetchUsers();
   }, [open, manager]);
 
-  // 🔹 Filter users by name or email
+  /* ================= SEARCH FILTER ================= */
   const filteredUsers = useMemo(() => {
     const q = search.toLowerCase();
     return users.filter(
@@ -47,7 +54,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
     );
   }, [users, search]);
 
-  // 🔹 Pagination logic
+  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
 
   const paginatedUsers = useMemo(() => {
@@ -55,12 +62,11 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
     return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredUsers, page]);
 
-  // Reset page when search changes
   useEffect(() => {
     setPage(1);
   }, [search]);
 
-  // 🔹 Replace manager
+  /* ================= REPLACE MANAGER ================= */
   const handleReplaceManager = async () => {
     if (!selectedUser) {
       return toast.error("Please select a new manager");
@@ -68,7 +74,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
 
     try {
       await api.patch(
-        `/owner/manager/replace/${selectedUser}`, // 👈 new manager ID
+        `/owner/manager/replace/${selectedUser}`,
         {},
         { withCredentials: true }
       );
@@ -85,7 +91,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white w-full max-w-2xl  rounded-xl shadow-xl p-6">
+      <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl p-6">
         {/* Header */}
         <h2 className="text-xl font-semibold text-gray-800">Replace Manager</h2>
 
@@ -108,7 +114,7 @@ const OwnerReplaceManagerModal = ({ open, onClose, manager, onSuccess }) => {
           {loading ? (
             <p className="text-center text-gray-500">Loading users...</p>
           ) : paginatedUsers.length === 0 ? (
-            <p className="text-center text-gray-500">No users found</p>
+            <p className="text-center text-gray-500">No verified users found</p>
           ) : (
             paginatedUsers.map((user) => (
               <label

@@ -90,6 +90,10 @@ const router = createBrowserRouter([
         path: "attendance",
         element: <Attendance />,
       },
+          {
+        path: "leave",
+        element: <ApplyLeave />,
+      },
       {
         path: "settings",
         element: <UserSettings />,

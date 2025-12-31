@@ -1,26 +1,35 @@
 import React from "react";
 
+/* ================= HELPERS ================= */
+const formatStatus = (status = "") =>
+  status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown";
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "present":
+      return "text-green-600";
+    case "absent":
+      return "text-red-600";
+    case "late":
+      return "text-yellow-600";
+    case "leave":
+      return "text-blue-600";
+    default:
+      return "text-gray-600";
+  }
+};
+
+const formatDate = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+/* ================= COMPONENT ================= */
 const AttendanceTable = ({ data = [] }) => {
-  const formatStatus = (status) => {
-    if (!status) return "Unknown";
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "present":
-        return "text-green-600";
-      case "absent":
-        return "text-red-600";
-      case "late":
-        return "text-yellow-600";
-      case "leave":
-        return "text-blue-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
   return (
     <div className="bg-white shadow-lg rounded-xl overflow-hidden">
       <table className="w-full text-left">
@@ -40,9 +49,12 @@ const AttendanceTable = ({ data = [] }) => {
               </td>
             </tr>
           ) : (
-            data.map((item, index) => (
-              <tr key={index} className="border-t">
-                <td className="px-6 py-4">{item.date}</td>
+            data.map((item) => (
+              <tr
+                key={item._id || `${item.user}-${item.date}`}
+                className="border-t hover:bg-gray-50"
+              >
+                <td className="px-6 py-4">{formatDate(item.date)}</td>
 
                 <td
                   className={`px-6 py-4 font-semibold ${getStatusColor(
@@ -52,9 +64,7 @@ const AttendanceTable = ({ data = [] }) => {
                   {formatStatus(item.status)}
                 </td>
 
-                <td className="px-6 py-4 text-gray-600">
-                  {item.note || "-"}
-                </td>
+                <td className="px-6 py-4 text-gray-600">{item.note || "-"}</td>
               </tr>
             ))
           )}

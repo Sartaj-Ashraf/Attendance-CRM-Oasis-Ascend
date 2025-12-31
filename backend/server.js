@@ -11,8 +11,9 @@ import userRouter from "./Routes/user.routes.js";
 import ownerRoute from "./Routes/owner.routes.js";
 import commonRoute from "./Routes/common.routes.js";
 import departmentRoute from "./Routes/department.routes.js";
-import { seed } from "./seed/seedStatus.js";
 import { generateAttendances } from "./seed/tempUser.js";
+// import { seedFullAttendanceData } from "./seed/seed.controller.js";
+import leaveRoutes from "./routes/leave.routes.js";
 connectDB();
 const app = express();
 
@@ -32,7 +33,7 @@ app.use(
 );
 // seed();
 // generateAttendances();
-import leaveRoutes from "./routes/leave.routes.js";
+// seedFullAttendanceData();
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));

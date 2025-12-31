@@ -7,7 +7,7 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
 import { sendSetPasswordEmail } from "../services/email.service.js";
-import  pagination  from "../utils/pagination.js";
+import pagination from "../utils/pagination.js";
 export const verifyToken = async (req, res) => {
   try {
     const { email, token } = req.query;
@@ -97,7 +97,7 @@ export const setPassword = async (req, res) => {
     });
   }
 };
-export const loginUser = async (req, res) => {  
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -156,15 +156,21 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
 export const getCurrentAttendance = async (req, res) => {
   try {
-    const { id } = req.user;
+    // ✅ FIX: use ONE variable name
+    const userId =
+      req.params.userId && req.user.role === "owner"
+        ? req.params.userId
+        : req.user.id;
+
     const { from, to } = req.query;
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
-    // 🔹 Validate dates
+    /* ================= VALIDATE DATES ================= */
     if (from && isNaN(new Date(from))) {
       return res.status(400).json({ msg: "Invalid from date" });
     }
@@ -173,8 +179,8 @@ export const getCurrentAttendance = async (req, res) => {
       return res.status(400).json({ msg: "Invalid to date" });
     }
 
-    // 🔹 Validate user
-    const user = await UserModel.findById(id).select(
+    /* ================= VALIDATE USER ================= */
+    const user = await UserModel.findById(userId).select(
       "-password -passwordSetupToken -passwordSetupExpires"
     );
 
@@ -182,8 +188,8 @@ export const getCurrentAttendance = async (req, res) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    // 🔹 Build query
-    const query = { user: id };
+    /* ================= BUILD QUERY ================= */
+    const query = { user: userId };
 
     if (from || to) {
       query.date = {};
@@ -201,16 +207,12 @@ export const getCurrentAttendance = async (req, res) => {
       }
     }
 
-    // 🔍 DEBUG LOG (TEMPORARY)
-    console.log("Attendance Query:", query);
-
-    // 🔹 Paginate
-    const result = await paginate({
+    /* ================= PAGINATION ================= */
+    const result = await pagination({
       model: Attendance,
       page,
       limit,
       query,
-
       sort: { date: -1 },
     });
 

@@ -107,7 +107,6 @@ const AddUser = ({ onClose, departments = [] }) => {
         className="w-full px-4 py-2 border rounded-lg bg-white"
       >
         <option value="employee">Employee</option>
-        <option value="manager">Manager</option>
       </select>
 
       <select

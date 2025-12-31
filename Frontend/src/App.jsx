@@ -1,7 +1,6 @@
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import {  Toaster } from "sonner";
-
+import { Toaster } from "sonner";
 
 import Login from "./pages/Login.jsx";
 
@@ -31,20 +30,21 @@ import OwnerSettings from "./pages/OwnerSettings.jsx";
 import UserSettings from "./pages/UserSettings.jsx";
 import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
-import EditComponent from "./pages/Dashboard/EditComponent.jsx"
+import EditComponent from "./pages/Dashboard/EditComponent.jsx";
 import TopBar from "./pages/Dashboard/Topbar.jsx";
 import Profile from './pages/Dashboard/User/Profile.jsx'
 import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
 import Notifications from "./pages/Dashboard/User/Notifications.jsx";
 const router = createBrowserRouter([
-   {
-    path:"/test5",
-    element:<TopBar/>
-
-   },{
+  {
+    path: "/test5",
+    element: <TopBar />,
+  },
+  {
     path: "/test4",
     element: <EditComponent />,
-  },{
+  },
+  {
     path: "/test3",
     element: <ApplyLeave />,
   },
@@ -93,7 +93,7 @@ const router = createBrowserRouter([
         path: "attendance",
         element: <Attendance />,
       },
-          {
+      {
         path: "leave",
         element: <ApplyLeave />,
       },
@@ -183,6 +183,10 @@ const router = createBrowserRouter([
       {
         path: "manage-leaves",
         element: <ManageLeaves />,
+      },
+      {
+        path: "see-employee-attendance/:userId", // ✅ NO slash
+        element: <Attendance />,
       },
     ],
   },

@@ -197,6 +197,30 @@ const Sidebar = () => {
           >
             ✈️ Leave Management
           </NavLink>
+          <NavLink
+            to="/dashboard/profile"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+            🙎🏻‍♂️ My Profile
+          </NavLink>
+            <NavLink
+            to="/dashboard/history"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+           📜 Attendance History
+          </NavLink>
+               <NavLink
+            to="/dashboard/notifications"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+           🔔 Notifications
+          </NavLink>
         </nav>
 
         {/* USER + LOGOUT */}

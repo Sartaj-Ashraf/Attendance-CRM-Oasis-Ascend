@@ -42,7 +42,18 @@ const AdminSidebar = () => {
         {/* ===== NAVIGATION ===== */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <NavLink
+            to="/owner"
+            end
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+            <i className="fas fa-home text-blue-500"></i>
+            Home
+          </NavLink>
+          <NavLink
             to="/owner/users"
+            end
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
             }
@@ -52,6 +63,7 @@ const AdminSidebar = () => {
           </NavLink>
 
           <NavLink
+            end
             to="/owner/managers"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
@@ -62,6 +74,7 @@ const AdminSidebar = () => {
           </NavLink>
 
           <NavLink
+            end
             to="/owner/attendance"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
@@ -72,6 +85,7 @@ const AdminSidebar = () => {
           </NavLink>
 
           <NavLink
+            end
             to="/owner/department"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
@@ -82,6 +96,7 @@ const AdminSidebar = () => {
           </NavLink>
 
           <NavLink
+            end
             to="/owner/block-users"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
@@ -90,10 +105,21 @@ const AdminSidebar = () => {
             <i className="fas fa-user-slash text-red-500"></i>
             Blocked Users
           </NavLink>
+          <NavLink
+            end
+            to="/owner/manage-leaves"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+            <i className="fas fa-clipboard-list text-green-500"></i>
+            Manage Leave
+          </NavLink>
 
           {/* ===== EXTRA SECTION ===== */}
           <div className="pt-4 mt-4 border-t">
             <NavLink
+              end
               to="/owner/reports"
               className={({ isActive }) =>
                 `${navItem} ${isActive ? activeNav : inactiveNav}`
@@ -104,6 +130,7 @@ const AdminSidebar = () => {
             </NavLink>
 
             <NavLink
+              end
               to="/owner/settings"
               className={({ isActive }) =>
                 `${navItem} ${isActive ? activeNav : inactiveNav}`

@@ -1,102 +1,77 @@
 import React, { useState } from "react";
-import api from "../../axios/axios.js";
 import { toast } from "react-hot-toast";
 import ConfirmModal from "../confrim/ConfirmModal.jsx";
-const UserRow = ({
-  user,
-  onEdit,
-  onBlock,
-  onDelete,
-  onPromote,
-  onResendVerification,
-}) => {
-  const [sending, setSending] = useState(false); // 👈 IMPORTANT
+import { NavLink } from "react-router-dom";
+const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
+  const [sending, setSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const submitHandler = async () => {
-    if (sending) return; // 🚫 block double click
+
+  const handleResend = async () => {
+    if (sending) return;
 
     setSending(true);
-
     const toastId = toast.loading("Sending verification email...");
 
     try {
-      const res = await api.post("/user/resetpassword", {
-        email: user.email,
-      });
-
-      toast.success(res.data.msg, { id: toastId });
-
-      setShowConfirm(false); // ✅ close ONLY after success
+      await onResendVerification(user); // ✅ delegate to parent
+      toast.success("Verification email sent", { id: toastId });
+      setShowConfirm(false);
     } catch (error) {
-      const msg = error.response?.data?.msg || "Failed to send email";
-      toast.error(msg, { id: toastId });
+      toast.error("Failed to send email", { id: toastId });
     } finally {
-      setSending(false); // 🔓 unlock buttons
+      setSending(false);
     }
   };
 
   return (
-    <tr className="border-b border-gray-300 hover:bg-gray-50 transition-colors duration-200">
-      {/* Name */}
+    <tr className="border-b border-gray-300 hover:bg-gray-50 transition">
+      {/* NAME */}
       <td className="px-6 py-4 font-medium text-gray-800">
         {user.username}
-        {!user.isEmailVerified && (
-          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1.5 rounded-full">
+        {!user.isEmailVerified ? (
+          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
             Unverified
           </span>
-        )}
-        {user.isEmailVerified && (
-          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1.5 rounded-full">
-            verified
+        ) : (
+          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            Verified
           </span>
         )}
       </td>
 
-      {/* Email */}
+      {/* EMAIL */}
       <td className="px-6 py-4 text-gray-600">{user.email}</td>
 
-      {/* Phone */}
-      <td className="px-6 py-4 text-gray-600">{user.phone}</td>
+      {/* PHONE */}
+      <td className="px-6 py-4 text-gray-600">{user.phone || "-"}</td>
 
-      {/* Department */}
+      {/* DEPARTMENT */}
       <td className="px-6 py-4 text-gray-600">
-        {user?.department?.name || "-"}
+        {user.department?.name || "-"}
       </td>
 
       {/* ACTIONS */}
-      <td className=" py-4">
-        <div className="flex flex-wrap gap-2 bg-gray-100 p-2 rounded-lg w-fit">
+      <td className="px-6 py-4">
+        <div className="flex gap-2 bg-gray-100 p-2 rounded-lg w-fit">
           <button
             onClick={() => onEdit?.(user)}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
           >
             Edit
           </button>
 
-          {/* Block (ONLY BLOCK) */}
           {user.isActive && (
             <button
               onClick={() => onBlock(user)}
-              className="px-3 py-1.5 bg-yellow-700 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
+              className="px-3 py-1.5 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
             >
               Block
             </button>
           )}
 
-          {/* Promote
-          {user.role === "employee" && onPromote && (
-            <button
-              onClick={() => onPromote(user)}
-              className="px-3 py-1.5 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition-colors"
-            >
-              Promote
-            </button>
-          )} */}
-
-          {/* Delete */}
           <button
             onClick={() => onDelete(user)}
-            className="px-3 py-1.5 bg-red-800 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
+            className="px-3 py-1.5 bg-red-700 text-white rounded-md text-sm hover:bg-red-800"
           >
             Delete
           </button>
@@ -106,24 +81,30 @@ const UserRow = ({
       {/* VIEW / RESEND */}
       <td className="px-6 py-4 text-center">
         {user.isEmailVerified ? (
-          <button className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors">
-            View User
+          <button className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600">
+            <NavLink to={`/owner/see-employee-attendance/${user._id}`}>
+              View User
+            </NavLink>
           </button>
         ) : (
           <button
             onClick={() => setShowConfirm(true)}
-            className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
+            disabled={sending}
+            className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 disabled:opacity-50"
           >
-            Resend Confirmation
+            Resend Email
           </button>
         )}
       </td>
+
+      {/* CONFIRM MODAL */}
       {showConfirm && (
         <ConfirmModal
           title="Resend Verification Email"
-          message={`Are you sure you want to resend verification email to ${user.email}?`}
-          onConfirm={submitHandler}
+          message={`Resend verification email to ${user.email}?`}
+          onConfirm={handleResend}
           onCancel={() => setShowConfirm(false)}
+          loading={sending}
         />
       )}
     </tr>

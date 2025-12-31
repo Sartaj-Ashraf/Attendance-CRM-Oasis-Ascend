@@ -205,7 +205,7 @@ export const GetAllEmployee = async (req, res) => {
 
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const department = req.query.department;
+    const { department, search, verification } = req.query;
 
     const query = {
       _id: { $ne: loggedInUserId },
@@ -214,9 +214,26 @@ export const GetAllEmployee = async (req, res) => {
       isActive: true,
     };
 
-    // ✅ SAFE ObjectId handling (CRITICAL FIX)
+    /* ================= DEPARTMENT FILTER ================= */
     if (department && mongoose.Types.ObjectId.isValid(department)) {
       query.department = new mongoose.Types.ObjectId(department);
+    }
+
+    /* ================= SEARCH FILTER ================= */
+    if (search) {
+      query.$or = [
+        { username: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    /* ================= VERIFICATION FILTER ================= */
+    if (verification === "verified") {
+      query.isEmailVerified = true;
+    }
+
+    if (verification === "unverified") {
+      query.isEmailVerified = false;
     }
 
     const result = await pagination({
@@ -242,6 +259,7 @@ export const GetAllEmployee = async (req, res) => {
     });
   }
 };
+
 export const editUser = async (req, res) => {
   try {
     const { id } = req.params;

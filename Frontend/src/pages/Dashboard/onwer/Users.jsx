@@ -6,24 +6,29 @@ import UserRow from "../../../components/admin/Userdetail";
 import ConfirmModal from "../../../components/confrim/ConfirmModal";
 import AddUser from "./AddUser";
 import SearchFilter from "../../../components/filters/SearchFilter";
+import EditEmployee from "../../../components/EditEmployee";
 
 const Users = () => {
+  /* ================= STATE ================= */
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
 
-  // modals
-  const [modalOpen, setModalOpen] = useState(false);
+  // Modals
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showAddUser, setShowAddUser] = useState(false);
 
-  // filters (backend driven)
+  // Filters
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
   const [verification, setVerification] = useState("all");
 
-  // pagination
+  // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 30;
@@ -42,12 +47,12 @@ const Users = () => {
     }
   };
 
-  /* ================= RESET PAGE WHEN FILTER CHANGES ================= */
+  /* ================= RESET PAGE ON FILTER ================= */
   useEffect(() => {
     setPage(1);
   }, [search, department, verification]);
 
-  /* ================= FETCH USERS (BACKEND FILTERING) ================= */
+  /* ================= FETCH USERS ================= */
   useEffect(() => {
     fetchUsers();
   }, [page, search, department, verification]);
@@ -66,21 +71,27 @@ const Users = () => {
 
       setUsers(res.data.data || []);
       setTotalPages(res.data.meta?.totalPages || 1);
-    } catch (error) {
-      console.error("Fetch users error:", error);
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to fetch users");
     }
   };
 
-  /* ================= CONFIRM MODAL ================= */
+  /* ================= EDIT ================= */
+  const handleEditUser = (user) => {
+    setEditUser(user);
+    setShowEditUser(true);
+  };
+
+  /* ================= CONFIRM ================= */
   const openConfirm = (type, user) => {
     setActionType(type);
     setSelectedUser(user);
-    setModalOpen(true);
+    setConfirmOpen(true);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
+  const closeConfirm = () => {
+    setConfirmOpen(false);
     setSelectedUser(null);
     setActionType(null);
     setLoading(false);
@@ -106,14 +117,14 @@ const Users = () => {
         await api.patch(`/owner/assign-role/${selectedUser._id}`, {
           role: "manager",
         });
-        toast.success("User promoted to Manager");
+        toast.success("User promoted to manager");
       }
 
       fetchUsers();
     } catch {
       toast.error("Action failed");
     } finally {
-      closeModal();
+      closeConfirm();
     }
   };
 
@@ -123,10 +134,11 @@ const Users = () => {
       await api.post(`/owner/resend-verification/${user._id}`);
       toast.success(`Verification email sent to ${user.email}`);
     } catch {
-      toast.error("Failed to resend verification email");
+      toast.error("Failed to resend verification");
     }
   };
 
+  /* ================= UI ================= */
   return (
     <div className="p-6 relative">
       {/* HEADER */}
@@ -183,6 +195,7 @@ const Users = () => {
                 <UserRow
                   key={user._id}
                   user={user}
+                  onEdit={handleEditUser}
                   onDelete={() => openConfirm("delete", user)}
                   onBlock={() => openConfirm("block", user)}
                   onPromote={
@@ -223,18 +236,12 @@ const Users = () => {
       </div>
 
       {/* CONFIRM MODAL */}
-      {modalOpen && selectedUser && (
+      {confirmOpen && selectedUser && (
         <ConfirmModal
-          title={
-            actionType === "delete"
-              ? "Delete User"
-              : actionType === "block"
-              ? "Block User"
-              : "Promote User"
-          }
+          title={`${actionType} user`}
           message={`Are you sure you want to ${actionType} ${selectedUser.username}?`}
           onConfirm={handleConfirm}
-          onCancel={closeModal}
+          onCancel={closeConfirm}
           loading={loading}
         />
       )}
@@ -252,7 +259,29 @@ const Users = () => {
 
             <AddUser
               departments={departments}
-              onClose={() => setShowAddUser(false)}
+              onClose={() => {
+                setShowAddUser(false);
+                fetchUsers();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showEditUser && editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className=" rounded-xl w-full max-w-2xl p-6 relative">
+            <EditEmployee
+              user={editUser}
+              onClose={() => {
+                setShowEditUser(false);
+                setEditUser(null);
+              }}
+              onSuccess={() => {
+                setShowEditUser(false);
+                setEditUser(null);
+                fetchUsers();
+              }}
             />
           </div>
         </div>

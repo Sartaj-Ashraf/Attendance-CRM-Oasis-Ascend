@@ -10,13 +10,13 @@ const SearchFilter = ({
   optionLabel = "name",
   optionValue = "_id",
 
-  verificationValue,              // 🆕
-  onVerificationChange,            // 🆕
+  verificationValue,
+  onVerificationChange,
 
   searchPlaceholder = "Search...",
   debounceDelay = 400,
   showSelect = true,
-  showVerification = true,         // 🆕
+  showVerification = true,
   showClear = true,
 }) => {
   const [localSearch, setLocalSearch] = useState(searchValue);

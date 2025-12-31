@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import api from "../../axios/axios.js";
-import {toast} from "react-hot-toast"
+import { toast } from "react-hot-toast";
+import ConfirmModal from "../confrim/ConfirmModal.jsx";
 const UserRow = ({
   user,
   onEdit,
@@ -9,19 +10,28 @@ const UserRow = ({
   onPromote,
   onResendVerification,
 }) => {
-  
+  const [sending, setSending] = useState(false); // 👈 IMPORTANT
+  const [showConfirm, setShowConfirm] = useState(false);
   const submitHandler = async () => {
-    const toastId = toast.loading("Sending reset link to provided email...");
+    if (sending) return; // 🚫 block double click
+
+    setSending(true);
+
+    const toastId = toast.loading("Sending verification email...");
 
     try {
-      const response = await api.post("user/resetpassword", {
+      const res = await api.post("/user/resetpassword", {
         email: user.email,
       });
 
-      toast.success(response.data.msg, { id: toastId });
+      toast.success(res.data.msg, { id: toastId });
+
+      setShowConfirm(false); // ✅ close ONLY after success
     } catch (error) {
-      const message = error.response?.data?.msg || "Something went wrong";
-      toast.error(message, { id: toastId });
+      const msg = error.response?.data?.msg || "Failed to send email";
+      toast.error(msg, { id: toastId });
+    } finally {
+      setSending(false); // 🔓 unlock buttons
     }
   };
 
@@ -101,13 +111,21 @@ const UserRow = ({
           </button>
         ) : (
           <button
-            onClick={() => submitHandler()}
+            onClick={() => setShowConfirm(true)}
             className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 transition-colors"
           >
             Resend Confirmation
           </button>
         )}
       </td>
+      {showConfirm && (
+        <ConfirmModal
+          title="Resend Verification Email"
+          message={`Are you sure you want to resend verification email to ${user.email}?`}
+          onConfirm={submitHandler}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </tr>
   );
 };

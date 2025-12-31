@@ -12,13 +12,15 @@ import {
   GetManagers,
   BlockedUsers,
   replaceManager,
-  getAllEmployees 
+  getAllEmployees ,
+  createOwner
 } from "../Controllers/owner.controller.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
   markAttendance,
   markBulkAttendance,
 } from "../Controllers/attendence.controller.js";
+router.post("/create-owner",createOwner)
 router.post("/create", authMiddleware, isAdmin, createUser); // creating user
 router.post("/edituser/:id", authMiddleware, isAdmin, editUser); // edit user
 router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user

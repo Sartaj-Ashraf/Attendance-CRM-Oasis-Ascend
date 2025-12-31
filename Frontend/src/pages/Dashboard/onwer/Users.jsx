@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../axios/axios";
 
@@ -11,14 +11,14 @@ const Users = () => {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
 
+  // modals
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const [showAddUser, setShowAddUser] = useState(false);
 
-  // filters
+  // filters (backend driven)
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
   const [verification, setVerification] = useState("all");
@@ -42,17 +42,15 @@ const Users = () => {
     }
   };
 
-  const departmentOptions = useMemo(() => departments, [departments]);
-
   /* ================= RESET PAGE WHEN FILTER CHANGES ================= */
   useEffect(() => {
     setPage(1);
-  }, [department, search, verification]);
+  }, [search, department, verification]);
 
-  /* ================= FETCH USERS ================= */
+  /* ================= FETCH USERS (BACKEND FILTERING) ================= */
   useEffect(() => {
     fetchUsers();
-  }, [page, department]);
+  }, [page, search, department, verification]);
 
   const fetchUsers = async () => {
     try {
@@ -60,7 +58,9 @@ const Users = () => {
         params: {
           page,
           limit,
+          search: search || undefined,
           department: department || undefined,
+          verification: verification !== "all" ? verification : undefined,
         },
       });
 
@@ -68,25 +68,9 @@ const Users = () => {
       setTotalPages(res.data.meta?.totalPages || 1);
     } catch (error) {
       console.error("Fetch users error:", error);
-      toast.error(error?.response?.data?.message || "Failed to fetch users");
+      toast.error("Failed to fetch users");
     }
   };
-
-  /* ================= FILTERED USERS ================= */
-  const visibleUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        user.username?.toLowerCase().includes(search.toLowerCase()) ||
-        user.email?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesVerification =
-        verification === "all" ||
-        (verification === "verified" && user.isEmailVerified === true) ||
-        (verification === "unverified" && user.isEmailVerified === false);
-
-      return matchesSearch && matchesVerification;
-    });
-  }, [users, search, verification]);
 
   /* ================= CONFIRM MODAL ================= */
   const openConfirm = (type, user) => {
@@ -155,7 +139,7 @@ const Users = () => {
             onSearchChange={setSearch}
             selectValue={department}
             onSelectChange={setDepartment}
-            selectOptions={departmentOptions}
+            selectOptions={departments}
             optionLabel="name"
             optionValue="_id"
             verificationValue={verification}
@@ -188,14 +172,14 @@ const Users = () => {
           </thead>
 
           <tbody>
-            {visibleUsers.length === 0 ? (
+            {users.length === 0 ? (
               <tr>
                 <td colSpan="6" className="text-center py-6 text-gray-500">
                   No users found
                 </td>
               </tr>
             ) : (
-              visibleUsers.map((user) => (
+              users.map((user) => (
                 <UserRow
                   key={user._id}
                   user={user}
@@ -267,7 +251,7 @@ const Users = () => {
             </button>
 
             <AddUser
-              departments={departmentOptions}
+              departments={departments}
               onClose={() => setShowAddUser(false)}
             />
           </div>

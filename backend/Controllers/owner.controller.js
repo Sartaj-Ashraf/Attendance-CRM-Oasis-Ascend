@@ -118,6 +118,70 @@ export const createUser = async (req, res) => {
     });
   }
 };
+export const createOwner = async (req, res) => {
+  try {
+    let { username, email, phone } = req.body;
+
+    // Check if owner already exists
+    const totalUsers = await UserModel.countDocuments({ isDeleted: false });
+
+    if (totalUsers > 0) {
+      return res.status(403).json({
+        message: "Owner already exists",
+      });
+    }
+
+    if (!username || !email || !phone) {
+      return res.status(400).json({
+        message: "Username and email are required",
+      });
+    }
+
+    username = username.toLowerCase();
+    email = email.toLowerCase();
+
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        message: "User already exists",
+      });
+    }
+
+    // Password setup
+    const tempPassword = crypto.randomBytes(6).toString("hex");
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    const passwordSetupToken = crypto.randomBytes(32).toString("hex");
+    const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordSetupToken}`;
+
+    await sendSetPasswordEmail(email, resetUrl);
+
+    const owner = await UserModel.create({
+      username,
+      email,
+      phone,
+      role: "owner",
+      password: hashedPassword,
+      passwordSetupToken,
+      passwordSetupExpires: Date.now() + 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+      message: "Owner created successfully",
+      user: {
+        id: owner._id,
+        username: owner.username,
+        email: owner.email,
+        role: owner.role,
+        resetUrl,
+      },
+    });
+  } catch (error) {
+    console.error("Create owner error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getAllEmployees = async (req, res) => {
   try {
     const users = await UserModel.find({

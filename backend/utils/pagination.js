@@ -33,4 +33,5 @@ const paginate = async ({
     },
   };
 };
+
 export default paginate;

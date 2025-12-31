@@ -190,7 +190,7 @@ const Sidebar = () => {
           </NavLink>
 
           <NavLink
-            to="/test3"
+            to="/dashboard/leave"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
             }

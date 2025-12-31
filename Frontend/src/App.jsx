@@ -33,6 +33,9 @@ import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
 import EditComponent from "./pages/Dashboard/EditComponent.jsx"
 import TopBar from "./pages/Dashboard/Topbar.jsx";
+import Profile from './pages/Dashboard/User/Profile.jsx'
+import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
+import Notifications from "./pages/Dashboard/User/Notifications.jsx";
 const router = createBrowserRouter([
    {
     path:"/test5",
@@ -93,6 +96,18 @@ const router = createBrowserRouter([
           {
         path: "leave",
         element: <ApplyLeave />,
+      },
+         {
+        path: "profile",
+        element: <Profile/>,
+      },
+        {
+        path: "notifications",
+        element: <Notifications/>,
+      },
+       {
+        path: "history",
+        element: <AttendanceHistory/>,
       },
       {
         path: "settings",

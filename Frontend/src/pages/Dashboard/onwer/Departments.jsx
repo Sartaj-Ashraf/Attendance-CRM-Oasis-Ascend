@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import api from "../../../axios/axios.js";
 // import ConfirmDeleteModal from "../../../components/common/ConfirmDeleteModal";
@@ -14,7 +14,7 @@ const Departments = () => {
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
-
+  const inputRef = useRef(null);
   // 🔹 Fetch departments
   const fetchDepartments = async () => {
     try {
@@ -85,9 +85,7 @@ const Departments = () => {
   // 🔹 Delete department
   const handleDeleteDepartment = async () => {
     try {
-      await api.delete(
-        `/department/delete/${departmentToDelete._id}`
-      );
+      await api.delete(`/department/delete/${departmentToDelete._id}`);
 
       toast.success("Department deleted successfully");
       setShowDeleteModal(false);
@@ -98,14 +96,16 @@ const Departments = () => {
       toast.error("Failed to delete department");
     }
   };
-
+  useEffect(() => {
+    if (showCreateModal && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showCreateModal]);
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Departments
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-800">Departments</h1>
 
         <button
           onClick={() => setShowCreateModal(true)}
@@ -129,10 +129,7 @@ const Departments = () => {
           <tbody>
             {departments.length === 0 ? (
               <tr>
-                <td
-                  colSpan="3"
-                  className="text-center py-6 text-gray-500"
-                >
+                <td colSpan="3" className="text-center py-6 text-gray-500">
                   No departments found
                 </td>
               </tr>
@@ -167,13 +164,14 @@ const Departments = () => {
 
       {/* Create Department Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Create New Department
             </h2>
 
             <input
+              ref={inputRef}
               type="text"
               value={newDepartmentName}
               onChange={(e) => setNewDepartmentName(e.target.value)}

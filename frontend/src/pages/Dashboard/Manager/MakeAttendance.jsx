@@ -1,14 +1,10 @@
-
-
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../axios/axios.js";
 import ConfirmModal from "../../../components/confrim/ConfirmModal.jsx";
 
 const MakeAttendance = () => {
-  const [date, setDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -22,12 +18,11 @@ const MakeAttendance = () => {
 
   const isSunday = new Date(date).getDay() === 0;
 
-  /* ================= FETCH EMPLOYEES ================= */
   const fetchEmployees = async (user) => {
     try {
       const res =
         user.role === "owner"
-          ? await api.get("/owner/getAllEmployees")
+          ? await api.get("/owner/getAllEmployeesForAttendance")
           : await api.get("/owner/getAllUsers", {
               params: { department: user.department?._id },
             });
@@ -37,7 +32,7 @@ const MakeAttendance = () => {
       toast.error("Failed to load employees");
     }
   };
-    /* ================= FETCH ATTENDANCE ================= */
+  /* ================= FETCH ATTENDANCE ================= */
   const fetchAttendanceByDate = async (selectedDate) => {
     try {
       const res = await api.get("/api/GetAttendanceByDate", {
@@ -45,6 +40,8 @@ const MakeAttendance = () => {
       });
 
       const map = {};
+
+      // 1️⃣ Fill existing attendance from backend
       res.data?.data?.forEach((row) => {
         if (!row.user?._id) return;
 
@@ -55,12 +52,23 @@ const MakeAttendance = () => {
         };
       });
 
+      // 2️⃣ DEFAULT → present (if no record exists)
+      employees.forEach((emp) => {
+        if (!map[emp._id]) {
+          map[emp._id] = {
+            status: "present",
+            note: "",
+            isLocked: false,
+          };
+        }
+      });
+
       setAttendance(map);
     } catch {
       toast.error("Failed to load attendance");
     }
   };
-    
+
   /* ================= INIT ================= */
   useEffect(() => {
     (async () => {
@@ -68,7 +76,6 @@ const MakeAttendance = () => {
         const res = await api.get("/api/isAuth");
         setAuthUser(res.data.user);
         await fetchEmployees(res.data.user);
-        
       } catch {
         toast.error("Auth failed");
       } finally {
@@ -311,9 +318,7 @@ const MakeAttendance = () => {
                       rows={2}
                       value={current.note || ""}
                       disabled={current.isLocked}
-                      onChange={(e) =>
-                        updateNote(emp._id, e.target.value)
-                      }
+                      onChange={(e) => updateNote(emp._id, e.target.value)}
                       className="w-full border border-gray-300 px-3 py-2 rounded resize-none text-sm focus:ring-2 focus:ring-blue-500"
                     />
                   </td>
@@ -347,6 +352,3 @@ const MakeAttendance = () => {
 };
 
 export default MakeAttendance;
-
-
-

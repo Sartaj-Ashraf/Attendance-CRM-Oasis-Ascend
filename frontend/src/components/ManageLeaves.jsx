@@ -192,7 +192,7 @@ const ManageLeaves = () => {
 
       {/* TABLE */}
       <div className="bg-white rounded-lg border overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full border border-gray-300">
           <thead className="bg-gray-100">
             <tr>
               <th className="px-6 py-3 text-left">Employee</th>
@@ -208,14 +208,14 @@ const ManageLeaves = () => {
           <tbody>
             {leaves.length === 0 ? (
               <tr>
-                <td colSpan="7" className="py-10 text-center text-gray-500">
+                <td colSpan="7" className="py-10 text-center text-gray-300">
                   <Inbox className="mx-auto mb-2" />
                   No leave requests
                 </td>
               </tr>
             ) : (
               leaves.map((leave) => (
-                <tr key={leave._id} className="border-t">
+                <tr key={leave._id} className="border-t border-gray-300">
                   <td className="px-6 py-4">{leave.user?.username}</td>
                   <td className="px-6 py-4">
                     {leave.user?.department?.name || "—"}

@@ -182,11 +182,12 @@ export const createOwner = async (req, res) => {
   }
 };
 
-export const getAllEmployees = async (req, res) => {
+export const getAllEmployeesForAttendance = async (req, res) => {
   try {
     const users = await UserModel.find({
       role: "employee",
       isDeleted: false,
+      isActive: true,
     })
       .populate("department")
       .sort({ username: 1 }); // A–Z
@@ -198,7 +199,49 @@ export const getAllEmployees = async (req, res) => {
     res.status(500).json({ msg: "Failed to fetch employees" });
   }
 };
+export const GetAllEmployee = async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id;
 
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const department = req.query.department;
+
+    const query = {
+      _id: { $ne: loggedInUserId },
+      role: "employee",
+      isDeleted: false,
+      isActive: true,
+    };
+
+    // ✅ SAFE ObjectId handling (CRITICAL FIX)
+    if (department && mongoose.Types.ObjectId.isValid(department)) {
+      query.department = new mongoose.Types.ObjectId(department);
+    }
+
+    const result = await pagination({
+      model: UserModel,
+      page,
+      limit,
+      query,
+      select: "-password",
+      populate: [
+        { path: "department", select: "name" },
+        { path: "reportingManager", select: "username email" },
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error("GetAllEmployee error:", error);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 export const editUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -511,49 +554,6 @@ export const getBlockedUser = async (req, res) => {
       success: false,
       message: "Failed to fetch blocked users",
       error: e.message,
-    });
-  }
-};
-export const GetAllEmployee = async (req, res) => {
-  try {
-    const loggedInUserId = req.user._id;
-
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const department = req.query.department;
-
-    const query = {
-      _id: { $ne: loggedInUserId },
-      role: "employee",
-      isDeleted: false,
-      isActive: true,
-    };
-
-    // ✅ SAFE ObjectId handling (CRITICAL FIX)
-    if (department && mongoose.Types.ObjectId.isValid(department)) {
-      query.department = new mongoose.Types.ObjectId(department);
-    }
-
-    const result = await pagination({
-      model: UserModel,
-      page,
-      limit,
-      query,
-      select: "-password",
-      populate: [
-        { path: "department", select: "name" },
-        { path: "reportingManager", select: "username email" },
-      ],
-    });
-
-    return res.status(200).json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    console.error("GetAllEmployee error:", error);
-    return res.status(500).json({
-      message: error.message,
     });
   }
 };

@@ -28,7 +28,7 @@ const AddUser = ({ onClose, departments = [] }) => {
       setLoading(true);
 
       await api.post("/owner/create", form);
-
+      onClose(true);
       toast.success("User created successfully");
 
       // ✅ RESET ALL INPUTS
@@ -41,9 +41,7 @@ const AddUser = ({ onClose, departments = [] }) => {
         payment: "paid",
       });
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to create user"
-      );
+      toast.error(error.response?.data?.message || "Failed to create user");
     } finally {
       setLoading(false);
     }
@@ -51,9 +49,7 @@ const AddUser = ({ onClose, departments = [] }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <h2 className="text-xl font-bold text-gray-800">
-        Add New Employee
-      </h2>
+      <h2 className="text-xl font-bold text-gray-800">Add New Employee</h2>
 
       <input
         name="username"

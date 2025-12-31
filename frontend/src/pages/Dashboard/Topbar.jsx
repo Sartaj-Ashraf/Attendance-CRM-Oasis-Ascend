@@ -1,69 +1,43 @@
-// import React, { useState, useContext } from "react";
-// import { useNavigate } from "react-router-dom";
-// import api from "../../axios/axios.js";
-// import { AuthContext } from "../../ContextApi/isAuth.jsx";
 
-// const Topbar = () => {
-//   const { user, isAuth, loading } = useContext(AuthContext);
-//   const navigate = useNavigate();
-//   if (!user) {
-//     return null;
-//   }
-//   console.log(user.email);
-//   const LogoutHandler = async () => {
-//     try {
-//       await api.post("/user/logout");
-//       setTimeout(() => navigate("/login"), 1000);
-//     } catch (e) {
-//       alert(e.error());
-//     }
-//   };
+// import OasisAscendLogo from "../../components/Oalogo";
 
+// const TopBar = () => {
 //   return (
-//     <div className="w-full bg-white shadow-lg rounded-xl  mt-6 px-10 py-4 flex items-center justify-between  ">
-//       <h3 className="text-lg font-semibold text-gray-800">
-//         Welcome,{" "}
-//         <span className="text-lg font-semibold text-blue-600 ">
-//           {user.username || "User"}
-//         </span>
-//       </h3>
+//     <header className="bg-white border-b px-6 py-3 flex justify-between items-center">
+//       <OasisAscendLogo size={42} />
 
-//       <div className="flex items-center gap-4">
-//         <div className="flex flex-col text-center">
-//           <span className="text-2xl text-gray-500">👤</span>
-//           <span>{user.email}</span>
-//         </div>
-
-//         <button
-//           onClick={LogoutHandler}
-//           className="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition font-medium"
-//         >
-//           Logout
-//         </button>
-//       </div>
-//     </div>
+//       {/* right side content */}
+//     </header>
 //   );
 // };
 
-// export default Topbar;
+// export default TopBar;
+
 import React, { useContext } from "react";
 import { AuthContext } from "../../ContextApi/isAuth";
+import OasisAscendLogo from "../../components/Oalogo";
+import Clock from "../../components/Clock";
 
-const Topbar = () => {
+const TopBar = () => {
   const { user } = useContext(AuthContext);
 
-  if (!user) return null;
-
   return (
-    <div className="w-full bg-white shadow-md px-8 py-4 flex items-center">
-      <h2 className="text-lg font-semibold text-gray-800">
-        Welcome,{" "}
-        <span className="text-blue-600 text-xl">
-          {user.username || "User"}
-        </span>
-      </h2>
-    </div>
+    <header className="w-full bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+      {/* LEFT: BRAND */}
+      <OasisAscendLogo size={42} />
+
+      <div className="flex items-center gap-4">
+         <Clock />
+        <div className="text-right leading-tight">
+        </div>
+         <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+          {user?.username?.[0]?.toUpperCase() || "U"}
+         </div>
+         </div>
+    </header>
   );
 };
 
-export default Topbar;
+export default TopBar;
+
+

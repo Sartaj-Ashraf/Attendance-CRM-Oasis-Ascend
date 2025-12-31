@@ -32,8 +32,13 @@ import UserSettings from "./pages/UserSettings.jsx";
 import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
 import EditComponent from "./pages/Dashboard/EditComponent.jsx"
+import TopBar from "./pages/Dashboard/Topbar.jsx";
 const router = createBrowserRouter([
    {
+    path:"/test5",
+    element:<TopBar/>
+
+   },{
     path: "/test4",
     element: <EditComponent />,
   },{

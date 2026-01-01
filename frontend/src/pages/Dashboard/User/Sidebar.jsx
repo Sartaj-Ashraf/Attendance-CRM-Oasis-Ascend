@@ -197,14 +197,6 @@ const Sidebar = () => {
           >
             ✈️ Leave Management
           </NavLink>
-          <NavLink
-            to="/dashboard/profile"
-            className={({ isActive }) =>
-              `${navItem} ${isActive ? activeNav : inactiveNav}`
-            }
-          >
-            🙎🏻‍♂️ My Profile
-          </NavLink>
             <NavLink
             to="/dashboard/history"
             className={({ isActive }) =>
@@ -220,6 +212,14 @@ const Sidebar = () => {
             }
           >
            🔔 Notifications
+          </NavLink>
+          <NavLink
+            to="/dashboard/profile"
+            className={({ isActive }) =>
+              `${navItem} ${isActive ? activeNav : inactiveNav}`
+            }
+          >
+            🙎🏻‍♂️ My Profile
           </NavLink>
         </nav>
 

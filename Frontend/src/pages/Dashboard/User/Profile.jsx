@@ -145,8 +145,10 @@ const MyProfile = () => {
               </label>
               <input
                 value={profile.email}
-                disabled
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed"
+                onChange={(e) =>
+                  setProfile({ ...profile, email: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 "
               />
             </div>
 
@@ -155,13 +157,19 @@ const MyProfile = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
               </label>
-              <input
+             <input
+                 type="text"
+                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={profile.phone}
-                onChange={(e) =>
-                  setProfile({ ...profile, phone: e.target.value })
-                }
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+                  onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "") .slice(0, 20); ; // remove non-digits
+                 setProfile({ ...profile, phone: value });
+  }}
+  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+
+/>
+
             </div>
 
             {/* ROLE */}

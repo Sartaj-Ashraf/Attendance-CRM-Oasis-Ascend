@@ -118,7 +118,6 @@ const Attendance = () => {
       const res = await api.get("/user/getCurrentUserdata", {
         params: { from, to },
       });
-      console.log(res.data.docs);
 
       setTableData(res.data.data);
 

@@ -7,7 +7,7 @@ import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 import pagination from "../utils/pagination.js";
 import mongoose from "mongoose";
-import { sendSetPasswordEmail } from "../services/email.service.js";
+import { sendEmail } from "../services/email.service.js";
 
 export const createUser = async (req, res) => {
   try {
@@ -82,7 +82,13 @@ export const createUser = async (req, res) => {
     const passwordSetupToken = crypto.randomBytes(32).toString("hex");
     const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordSetupToken}`;
 
-    await sendSetPasswordEmail(email, resetUrl);
+    await sendEmail({
+      toEmail: email,
+      type: "SET_PASSWORD",
+      data: {
+        resetUrl,
+      },
+    });
 
     // 6️⃣ Create user
     const newUser = await UserModel.create({
@@ -154,7 +160,13 @@ export const createOwner = async (req, res) => {
     const passwordSetupToken = crypto.randomBytes(32).toString("hex");
     const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordSetupToken}`;
 
-    await sendSetPasswordEmail(email, resetUrl);
+    await sendEmail({
+      toEmail: email,
+      type: "SET_PASSWORD",
+      data: {
+        resetUrl,
+      },
+    });
 
     const owner = await UserModel.create({
       username,

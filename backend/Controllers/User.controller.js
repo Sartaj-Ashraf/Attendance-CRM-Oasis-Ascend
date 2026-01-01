@@ -6,7 +6,7 @@ import nodemailer from "nodemailer";
 import GenerateToken from "../utils/GenrateToken.js";
 import Attendance from "../Models/Attendence.model.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
-import { sendSetPasswordEmail } from "../services/email.service.js";
+import { sendEmail } from "../services/email.service.js";
 import pagination from "../utils/pagination.js";
 export const verifyToken = async (req, res) => {
   try {
@@ -155,7 +155,6 @@ export const loginUser = async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
-
 
 export const getCurrentAttendance = async (req, res) => {
   try {
@@ -329,7 +328,13 @@ export const resetpassword = async (req, res) => {
     const passwordToken = generatePasswordToken();
     const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${email}&token=${passwordToken}`;
 
-    await sendSetPasswordEmail(email, resetUrl);
+    await sendEmail({
+      toEmail: email,
+      type: "SET_PASSWORD",
+      data: {
+        resetUrl,
+      },
+    });
 
     user.passwordSetupToken = passwordToken;
     user.passwordSetupExpires = new Date(Date.now() + 30 * 60 * 1000);

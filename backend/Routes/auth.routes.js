@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 // ✅ verify password route
-router.get("/verify-password", authMiddleware, verifyPassword);
+router.post("/verify-password", authMiddleware, verifyPassword);
 router.put("/setPendingEmail", authMiddleware, setPendingEmail);
 router.post("/resendOtp", authMiddleware, resendEmailOtp);
 router.post("/verifyEmail", authMiddleware, verifyEmail);

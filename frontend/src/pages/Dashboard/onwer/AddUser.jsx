@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+// Updated AddUser with axios call to fetch departments (no backend changes)
+
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../axios/axios";
 
-const AddUser = ({ onClose, departments = [] }) => {
+const AddUser = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
   const [form, setForm] = useState({
     username: "",
@@ -13,6 +16,20 @@ const AddUser = ({ onClose, departments = [] }) => {
     department: "",
     payment: "paid",
   });
+
+  /* ================= FETCH DEPARTMENTS ================= */
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await api.get("/department/get");
+        setDepartments(res.data);
+      } catch (error) {
+        toast.error("Failed to load departments");
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   /* ================= CHANGE ================= */
   const handleChange = (e) => {
@@ -26,12 +43,10 @@ const AddUser = ({ onClose, departments = [] }) => {
 
     try {
       setLoading(true);
-
       await api.post("/owner/create", form);
-      onClose(true);
       toast.success("User created successfully");
+      onClose(true);
 
-      // ✅ RESET ALL INPUTS
       setForm({
         username: "",
         email: "",
@@ -82,7 +97,7 @@ const AddUser = ({ onClose, departments = [] }) => {
         className="w-full px-4 py-2 border rounded-lg"
       />
 
-      {/* DEPARTMENT (FROM USERS DATA) */}
+      {/* DEPARTMENT */}
       <select
         name="department"
         value={form.department}

@@ -34,7 +34,6 @@ router.get("/getAllUsers", authMiddleware, isAdmin, getAllDepartmentUser);
 router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 router.get("/getManagers", authMiddleware, isAdmin, GetManagers);
 router.get("/getBlockedUsers", authMiddleware, isAdmin, BlockedUsers);
-
 router.get("/getAllEmployee", authMiddleware, isAdmin, GetAllEmployee);
 router.get(
   "/getAllEmployeesForAttendance",

@@ -103,3 +103,81 @@ export const seedFullAttendanceData = async (req, res) => {
     });
   }
 };
+export const seedSingleUserAttendance = async (req, res) => {
+  try {
+    const { userId, days = 1000, markedBy } = req.body;
+
+    if (!userId || !markedBy) {
+      return res.status(400).json({
+        success: false,
+        message: "userId and markedBy are required",
+      });
+    }
+
+    // 🔒 Optional safety
+    if (process.env.NODE_ENV === "production") {
+      return res.status(403).json({
+        success: false,
+        message: "Seeding not allowed in production",
+      });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const STATUSES = ["present", "present", "present", "late", "absent"];
+    const attendanceRecords = [];
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+
+      const status = STATUSES[i % STATUSES.length];
+
+      attendanceRecords.push({
+        user: user._id,
+        date,
+        status,
+        leaveType:
+          status === "leave"
+            ? Math.random() > 0.5
+              ? "paid"
+              : "unpaid"
+            : undefined,
+        markedBy,
+        note: "Seeded single-user attendance",
+        isLocked: true,
+      });
+    }
+
+    await AttendanceModel.insertMany(attendanceRecords, {
+      ordered: false, // 🔥 ignores duplicate date errors
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `${days} attendance records created for user`,
+      user: user.username,
+      totalRecords: attendanceRecords.length,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(201).json({
+        success: true,
+        message: "Some attendance already existed, remaining inserted",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to seed attendance",
+      error: error.message,
+    });
+  }
+};

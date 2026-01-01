@@ -12,7 +12,9 @@ import ownerRoute from "./Routes/owner.routes.js";
 import commonRoute from "./Routes/common.routes.js";
 import departmentRoute from "./Routes/department.routes.js";
 import { generateAttendances } from "./seed/tempUser.js";
+import authRoute from "./Routes/auth.routes.js";
 // import { seedFullAttendanceData } from "./seed/seed.controller.js";
+// import seedAttendance from "./seed/seedAttendance.js";
 import leaveRoutes from "./routes/leave.routes.js";
 connectDB();
 const app = express();
@@ -46,6 +48,7 @@ app.use("/owner", ownerRoute);
 app.use("/department", departmentRoute);
 app.use("/api", commonRoute);
 app.use("/leave", leaveRoutes);
+app.use("/auth", authRoute);
 // auth middleware
 import seedRoutes from "./routes/seed.routes.js";
 

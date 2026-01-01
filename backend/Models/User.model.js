@@ -49,7 +49,6 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ✅ Reporting Manager
     reportingManager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -70,13 +69,35 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    passwordSetupToken: String,
-    passwordSetupExpires: Date,
+
+    // 🔁 New email waiting for verification
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      default: null,
+    },
+
+    // 🔐 OTP for email verification (optional approach)
+    verifyOtp: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    // 🔗 Password / email verification link
+    passwordSetupToken: {
+      type: String,
+    },
+
+    passwordSetupExpires: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
 
-// Helpful index
+// Helpful compound index
 userSchema.index({ department: 1, reportingManager: 1 });
 
 export default mongoose.model("User", userSchema);

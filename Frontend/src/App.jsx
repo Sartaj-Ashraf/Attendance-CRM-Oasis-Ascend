@@ -35,6 +35,7 @@ import TopBar from "./pages/Dashboard/Topbar.jsx";
 import Profile from './pages/Dashboard/User/Profile.jsx'
 import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
 import Notifications from "./pages/Dashboard/User/Notifications.jsx";
+import Salary from "./pages/Dashboard/User/Salary.jsx";
 const router = createBrowserRouter([
   {
     path: "/test5",
@@ -96,6 +97,10 @@ const router = createBrowserRouter([
       {
         path: "leave",
         element: <ApplyLeave />,
+      },
+       {
+        path: "salary",
+        element: <Salary />,
       },
          {
         path: "profile",

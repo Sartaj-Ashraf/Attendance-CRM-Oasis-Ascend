@@ -91,7 +91,10 @@ const userSchema = new mongoose.Schema(
     passwordSetupToken: {
       type: String,
     },
-
+    resendTry: {
+      type: Number,
+      default: 0,
+    },
     passwordSetupExpires: {
       type: Date,
     },

@@ -275,66 +275,73 @@ export const GetAllEmployee = async (req, res) => {
 export const editUser = async (req, res) => {
   try {
     const { id } = req.params;
-    let { username, email, payment } = req.body;
+    let { email, department, payment } = req.body;
 
     const user = await UserModel.findById(id);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    if (username) {
-      user.username = username.toLowerCase();
-    }
-
-    // 3️⃣ Update email (optional + unique check)
+    /* =======================
+       EMAIL (DIRECT UPDATE)
+    ======================= */
     if (email) {
-      email = email.toLowerCase();
+      email = email.toLowerCase().trim();
 
-      const emailExists = await UserModel.findOne({
-        email,
-        _id: { $ne: id },
-      });
-
-      if (emailExists) {
-        return res.status(409).json({
-          message: "Email already in use",
+      if (email !== user.email) {
+        const emailExists = await UserModel.findOne({
+          email,
+          _id: { $ne: id },
         });
-      }
 
-      user.email = email;
+        if (emailExists) {
+          return res.status(409).json({
+            message: "Email already in use",
+          });
+        }
+
+        user.email = email; // ✅ UPDATED
+        user.pendingEmail = null; // cleanup
+        user.isEmailVerified = false; // or false if needed
+        user.resendTry = 0;
+      }
     }
 
+    /* =======================
+       DEPARTMENT
+    ======================= */
+    if (department) {
+      user.department = department;
+    }
+
+    /* =======================
+       PAYMENT
+    ======================= */
     if (payment) {
       payment = payment.toLowerCase();
-
       if (!["paid", "unpaid"].includes(payment)) {
-        return res.status(400).json({
-          message: "Payment must be 'paid' or 'unpaid'",
-        });
+        return res
+          .status(400)
+          .json({ message: "Payment must be paid or unpaid" });
       }
-
       user.payment = payment;
     }
 
-    const updatedUser = await user.save();
+    await user.save();
 
-    res.status(200).json({
+    res.json({
       message: "User updated successfully",
       user: {
-        id: updatedUser._id,
-        username: updatedUser.username,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        payment: updatedUser.payment,
+        id: user._id,
+        email: user.email,
+        department: user.department,
+        payment: user.payment,
+        isEmailVerified: user.isEmailVerified,
       },
     });
-  } catch (error) {
-    console.error("Edit User Error:", error);
-    res.status(500).json({
-      message: "Server error",
-    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -381,7 +388,11 @@ export const activateaccount = async (req, res) => {
     }
 
     // 3️⃣ Activate account (NO save)
-    await UserModel.findByIdAndUpdate(id, { isActive: true }, { new: true });
+    await UserModel.findByIdAndUpdate(
+      id,
+      { isActive: true, resendTry: 0 },
+      { new: true }
+    );
 
     return res.status(200).json({
       msg: "Account activated successfully",
@@ -624,3 +635,4 @@ export const BlockedUsers = async (req, res) => {
       .json({ success: false, message: "Failed to fetch blocked users" });
   }
 };
+

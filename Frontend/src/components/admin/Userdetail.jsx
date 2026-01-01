@@ -1,28 +1,7 @@
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
-import ConfirmModal from "../confrim/ConfirmModal.jsx";
+import React from "react";
 import { NavLink } from "react-router-dom";
+
 const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
-  const [sending, setSending] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  const handleResend = async () => {
-    if (sending) return;
-
-    setSending(true);
-    const toastId = toast.loading("Sending verification email...");
-
-    try {
-      await onResendVerification(user); // ✅ delegate to parent
-      toast.success("Verification email sent", { id: toastId });
-      setShowConfirm(false);
-    } catch (error) {
-      toast.error("Failed to send email", { id: toastId });
-    } finally {
-      setSending(false);
-    }
-  };
-
   return (
     <tr className="border-b border-gray-300 hover:bg-gray-50 transition">
       {/* NAME */}
@@ -54,8 +33,8 @@ const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
       <td className="px-6 py-4">
         <div className="flex gap-2 bg-gray-100 p-2 rounded-lg w-fit">
           <button
-            onClick={() => onEdit?.(user)}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+            onClick={() => onEdit(user)}
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm"
           >
             Edit
           </button>
@@ -63,7 +42,7 @@ const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
           {user.isActive && (
             <button
               onClick={() => onBlock(user)}
-              className="px-3 py-1.5 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700"
+              className="px-3 py-1.5 bg-yellow-600 text-white rounded-md text-sm"
             >
               Block
             </button>
@@ -71,42 +50,31 @@ const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
 
           <button
             onClick={() => onDelete(user)}
-            className="px-3 py-1.5 bg-red-700 text-white rounded-md text-sm hover:bg-red-800"
+            className="px-3 py-1.5 bg-red-700 text-white rounded-md text-sm"
           >
             Delete
           </button>
+
+          {!user.isEmailVerified && (
+            <button
+              onClick={() => onResendVerification(user)}
+              className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm"
+            >
+              Resend Email
+            </button>
+          )}
         </div>
       </td>
 
-      {/* VIEW / RESEND */}
+      {/* VIEW */}
       <td className="px-6 py-4 text-center">
-        {user.isEmailVerified ? (
-          <button className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600">
-            <NavLink to={`/owner/see-employee-attendance/${user._id}`}>
-              View User
-            </NavLink>
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowConfirm(true)}
-            disabled={sending}
-            className="px-3 py-1.5 bg-orange-500 text-white rounded-md text-sm hover:bg-orange-600 disabled:opacity-50"
-          >
-            Resend Email
-          </button>
-        )}
+        <NavLink
+          to={`/owner/see-employee-attendance/${user._id}`}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-sm"
+        >
+          View User
+        </NavLink>
       </td>
-
-      {/* CONFIRM MODAL */}
-      {showConfirm && (
-        <ConfirmModal
-          title="Resend Verification Email"
-          message={`Resend verification email to ${user.email}?`}
-          onConfirm={handleResend}
-          onCancel={() => setShowConfirm(false)}
-          loading={sending}
-        />
-      )}
     </tr>
   );
 };

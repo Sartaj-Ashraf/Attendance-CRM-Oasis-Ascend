@@ -82,9 +82,11 @@ const userSchema = new mongoose.Schema(
     verifyOtp: {
       type: String,
       default: null,
-      select: false,
     },
-
+    verifyOtpExpires: {
+      type: Date, // expiry time
+      default: null,
+    },
     // 🔗 Password / email verification link
     passwordSetupToken: {
       type: String,

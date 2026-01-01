@@ -20,7 +20,9 @@ const Resetpassword = () => {
       });
 
       toast.success(response.data.msg, { id: toastId });
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (error) {
       const message = error.response?.data?.msg || "Something went wrong";
       toast.error(message, { id: toastId });

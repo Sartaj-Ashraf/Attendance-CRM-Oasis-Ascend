@@ -32,7 +32,7 @@ import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
 import EditComponent from "./pages/Dashboard/EditComponent.jsx";
 import TopBar from "./pages/Dashboard/Topbar.jsx";
-import Profile from './pages/Dashboard/User/Profile.jsx'
+import Profile from './components/profile/Profile.jsx'
 import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
 import Notifications from "./pages/Dashboard/User/Notifications.jsx";
 import Salary from "./pages/Dashboard/User/Salary.jsx";

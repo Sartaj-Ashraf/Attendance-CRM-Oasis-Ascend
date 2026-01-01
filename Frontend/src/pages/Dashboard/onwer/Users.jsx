@@ -18,9 +18,8 @@ const Users = () => {
   const [showEditUser, setShowEditUser] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [actionType, setActionType] = useState(null);
+  const [confirmUser, setConfirmUser] = useState(null);
+  const [confirmType, setConfirmType] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Filters
@@ -71,70 +70,51 @@ const Users = () => {
 
       setUsers(res.data.data || []);
       setTotalPages(res.data.meta?.totalPages || 1);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to fetch users");
     }
   };
 
-  /* ================= EDIT ================= */
-  const handleEditUser = (user) => {
-    setEditUser(user);
-    setShowEditUser(true);
-  };
-
   /* ================= CONFIRM ================= */
   const openConfirm = (type, user) => {
-    setActionType(type);
-    setSelectedUser(user);
-    setConfirmOpen(true);
-  };
-
-  const closeConfirm = () => {
-    setConfirmOpen(false);
-    setSelectedUser(null);
-    setActionType(null);
-    setLoading(false);
+    setConfirmType(type);
+    setConfirmUser(user);
   };
 
   const handleConfirm = async () => {
-    if (!selectedUser) return;
+    if (!confirmUser) return;
 
     try {
       setLoading(true);
 
-      if (actionType === "delete") {
-        await api.post(`/owner/deleteUser/${selectedUser._id}`);
+      if (confirmType === "resend") {
+        await api.post(`/auth/resend-confirmation/${confirmUser._id}`);
+        toast.success("Set password email sent");
+      }
+
+      if (confirmType === "delete") {
+        await api.post(`/owner/deleteUser/${confirmUser._id}`);
         toast.success("User deleted");
       }
 
-      if (actionType === "block") {
-        await api.patch(`/owner/disableaccount/${selectedUser._id}`);
+      if (confirmType === "block") {
+        await api.patch(`/owner/disableaccount/${confirmUser._id}`);
         toast.warning("User blocked");
       }
 
-      if (actionType === "promote") {
-        await api.patch(`/owner/assign-role/${selectedUser._id}`, {
-          role: "manager",
-        });
-        toast.success("User promoted to manager");
-      }
-
       fetchUsers();
-    } catch {
-      toast.error("Action failed");
+    } catch (error) {
+      console.error("ACTION ERROR 👉", error?.response?.data || error);
+      toast.error(
+        error?.response?.data?.msg ||
+          error?.response?.data?.message ||
+          "Action failed"
+      );
     } finally {
-      closeConfirm();
-    }
-  };
-
-  /* ================= RESEND VERIFICATION ================= */
-  const resendVerification = async (user) => {
-    try {
-      await api.post(`/owner/resend-verification/${user._id}`);
-      toast.success(`Verification email sent to ${user.email}`);
-    } catch {
-      toast.error("Failed to resend verification");
+      setLoading(false);
+      setConfirmUser(null);
+      setConfirmType(null);
     }
   };
 
@@ -163,7 +143,7 @@ const Users = () => {
 
         <button
           onClick={() => setShowAddUser(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Add Employee
         </button>
@@ -195,15 +175,13 @@ const Users = () => {
                 <UserRow
                   key={user._id}
                   user={user}
-                  onEdit={handleEditUser}
-                  onDelete={() => openConfirm("delete", user)}
-                  onBlock={() => openConfirm("block", user)}
-                  onPromote={
-                    user.role === "employee"
-                      ? () => openConfirm("promote", user)
-                      : null
-                  }
-                  onResendVerification={() => resendVerification(user)}
+                  onEdit={(u) => {
+                    setEditUser(u);
+                    setShowEditUser(true);
+                  }}
+                  onDelete={(u) => openConfirm("delete", u)}
+                  onBlock={(u) => openConfirm("block", u)}
+                  onResendVerification={(u) => openConfirm("resend", u)}
                 />
               ))
             )}
@@ -236,13 +214,13 @@ const Users = () => {
       </div>
 
       {/* CONFIRM MODAL */}
-      {confirmOpen && selectedUser && (
+      {confirmUser && (
         <ConfirmModal
-          title={`${actionType} user`}
-          message={`Are you sure you want to ${actionType} ${selectedUser.username}?`}
-          onConfirm={handleConfirm}
-          onCancel={closeConfirm}
+          title="Confirm Action"
+          message={`Are you sure you want to ${confirmType} ${confirmUser.email}?`}
           loading={loading}
+          onCancel={() => setConfirmUser(null)}
+          onConfirm={handleConfirm}
         />
       )}
 
@@ -268,22 +246,21 @@ const Users = () => {
         </div>
       )}
 
+      {/* EDIT USER MODAL */}
       {showEditUser && editUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className=" rounded-xl w-full max-w-2xl p-6 relative">
-            <EditEmployee
-              user={editUser}
-              onClose={() => {
-                setShowEditUser(false);
-                setEditUser(null);
-              }}
-              onSuccess={() => {
-                setShowEditUser(false);
-                setEditUser(null);
-                fetchUsers();
-              }}
-            />
-          </div>
+          <EditEmployee
+            user={editUser}
+            onClose={() => {
+              setShowEditUser(false);
+              setEditUser(null);
+            }}
+            onSuccess={() => {
+              setShowEditUser(false);
+              setEditUser(null);
+              fetchUsers();
+            }}
+          />
         </div>
       )}
     </div>

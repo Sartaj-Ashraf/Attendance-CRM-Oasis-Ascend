@@ -23,7 +23,7 @@ import {
 } from "../Controllers/attendence.controller.js";
 router.post("/create-owner", createOwner);
 router.post("/create", authMiddleware, isAdmin, createUser); // creating user
-router.post("/edituser/:id", authMiddleware, isAdmin, editUser); // edit user
+router.put("/updateUser/:id", authMiddleware, isAdmin, editUser);
 router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user
 router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
 router.patch("/manager/replace/:id", authMiddleware, replaceManager);

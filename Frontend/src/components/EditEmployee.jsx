@@ -7,6 +7,7 @@ const EditEmployee = ({ user, onClose, onSuccess }) => {
   const [departments, setDepartments] = useState([]);
 
   const [form, setForm] = useState({
+    email: "",
     department: "",
     payment: "paid",
   });
@@ -29,6 +30,7 @@ const EditEmployee = ({ user, onClose, onSuccess }) => {
   useEffect(() => {
     if (user) {
       setForm({
+        email: user.email || "",
         department: user.department?._id || "",
         payment: user.payment || "paid",
       });
@@ -49,15 +51,29 @@ const EditEmployee = ({ user, onClose, onSuccess }) => {
       setLoading(true);
 
       await api.put(`/owner/updateUser/${user._id}`, {
+        email: form.email,
         department: form.department,
         payment: form.payment,
       });
 
       toast.success("Employee updated successfully");
+
+      // 🔔 Show info only if backend really changes email
+      if (
+        form.email !== user.email &&
+        form.email !== user.pendingEmail
+      ) {
+        toast.info(
+          "New email added. Verification is required before it becomes active."
+        );
+      }
+
       onSuccess?.();
       onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update employee");
+      toast.error(
+        error.response?.data?.message || "Failed to update employee"
+      );
     } finally {
       setLoading(false);
     }
@@ -66,9 +82,33 @@ const EditEmployee = ({ user, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
       <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Edit Employee</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">
+          Edit Employee
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* EMAIL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full px-4 py-2 border rounded-lg"
+            />
+            {form.email !== user?.email &&
+              form.email !== user?.pendingEmail && (
+                <p className="text-xs text-orange-600 mt-1">
+                  Changing email will require verification
+                </p>
+              )}
+          </div>
+
           {/* DEPARTMENT */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

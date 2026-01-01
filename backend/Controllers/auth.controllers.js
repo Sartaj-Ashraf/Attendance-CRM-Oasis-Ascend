@@ -2,11 +2,16 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import userModel from "../Models/User.model.js";
 import { sendEmail } from "../services/email.service.js";
+import nodemailer from "nodemailer";
+import GenerateToken from "../utils/GenrateToken.js";
+import { generatePasswordToken } from "../utils/passwordToken.util.js";
+/* =====================================================
+   VERIFY CURRENT PASSWORD
+===================================================== */
 export const verifyPassword = async (req, res) => {
   try {
     const { password } = req.body;
 
-    /* ================= VALIDATION ================= */
     if (!password) {
       return res.status(400).json({
         success: false,
@@ -14,7 +19,6 @@ export const verifyPassword = async (req, res) => {
       });
     }
 
-    /* ================= USER ================= */
     const user = await userModel.findById(req.user.id).select("+password");
 
     if (!user) {
@@ -38,7 +42,6 @@ export const verifyPassword = async (req, res) => {
       });
     }
 
-    /* ================= PASSWORD CHECK ================= */
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -48,20 +51,22 @@ export const verifyPassword = async (req, res) => {
       });
     }
 
-    /* ================= SUCCESS ================= */
     return res.status(200).json({
       success: true,
       message: "Password verified successfully",
     });
   } catch (error) {
-    console.error("Verify password error:", error);
-
+    console.error("verifyPassword error:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
 };
+
+/* =====================================================
+   SET PENDING EMAIL + SEND OTP
+===================================================== */
 export const setPendingEmail = async (req, res) => {
   try {
     const { email } = req.body;
@@ -73,7 +78,9 @@ export const setPendingEmail = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.toLowerCase();
     const user = await userModel.findById(req.user.id);
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -81,23 +88,45 @@ export const setPendingEmail = async (req, res) => {
       });
     }
 
-    // ✅ Generate secure 5-digit OTP
-    const otp = crypto.randomInt(10000, 100000);
+    // Same email already pending on same user
+    if (user.pendingEmail === normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already pending verification",
+      });
+    }
 
-    // ✅ Hash OTP before saving
+    // Email used or pending by another user
+    const emailTaken = await userModel.findOne({
+      _id: { $ne: user._id },
+      isDeleted: false,
+      $or: [{ email: normalizedEmail }, { pendingEmail: normalizedEmail }],
+    });
+
+    if (emailTaken) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "Email is already used or pending verification by another user",
+      });
+    }
+
+    // Generate OTP
+    const otp = crypto.randomInt(10000, 100000);
     const hashedOtp = await bcrypt.hash(otp.toString(), 10);
 
-    // ✅ Send OTP email
+    // Send OTP email
     await sendEmail({
-      toEmail: email,
+      toEmail: normalizedEmail,
       type: "VERIFY_OTP",
       data: { otp },
     });
 
-    // ✅ Save pending email + OTP
-    user.pendingEmail = email.toLowerCase();
+    // Save pending email + OTP
+    user.pendingEmail = normalizedEmail;
     user.verifyOtp = hashedOtp;
-    user.verifyOtpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.verifyOtpExpires = Date.now() + 24 * 60 * 60 * 1000; // 10 min
+    user.resendTry = 0; // reset on new request
 
     await user.save();
 
@@ -114,3 +143,196 @@ export const setPendingEmail = async (req, res) => {
   }
 };
 
+/* =====================================================
+   VERIFY EMAIL VIA OTP
+===================================================== */
+export const verifyEmail = async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is required",
+      });
+    }
+
+    const user = await userModel.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.pendingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "No pending email to verify",
+      });
+    }
+
+    if (!user.verifyOtp || !user.verifyOtpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "No OTP request found",
+      });
+    }
+
+    if (user.verifyOtpExpires < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired. Please request again.",
+      });
+    }
+
+    const isOtpValid = await bcrypt.compare(otp.toString(), user.verifyOtp);
+
+    if (!isOtpValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // OTP verified → finalize email change
+    user.email = user.pendingEmail;
+    user.pendingEmail = null;
+    user.verifyOtp = null;
+    user.verifyOtpExpires = null;
+    user.resendTry = 0;
+    user.isEmailVerified = true;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      email: user.email,
+    });
+  } catch (error) {
+    console.error("verifyEmail error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+/* =====================================================
+   RESEND EMAIL OTP (MAX 3 TIMES)
+===================================================== */
+export const resendEmailOtp = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user.id).select("+verifyOtp");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is blocked. Contact support.",
+      });
+    }
+
+    if (!user.pendingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "No pending email to verify",
+      });
+    }
+
+    if (user.resendTry >= 3) {
+      user.isActive = false;
+      await user.save();
+
+      return res.status(403).json({
+        success: false,
+        message: "Too many OTP requests. Your account has been blocked.",
+      });
+    }
+
+    const otp = crypto.randomInt(10000, 100000);
+    const hashedOtp = await bcrypt.hash(otp.toString(), 10);
+
+    await sendEmail({
+      toEmail: user.pendingEmail,
+      type: "VERIFY_OTP",
+      data: { otp },
+    });
+
+    user.verifyOtp = hashedOtp;
+    user.verifyOtpExpires = Date.now() + 10 * 60 * 1000;
+    user.resendTry += 1;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `OTP resent successfully (${user.resendTry}/3)`,
+    });
+  } catch (error) {
+    console.error("resendEmailOtp error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const resendSetPasswordEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found",
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        msg: "User email is already verified",
+      });
+    }
+
+    // 🔐 Generate token
+    const passwordToken = generatePasswordToken();
+
+    const resetUrl = `${process.env.FRONTEND_URL}/set-password?email=${user.email}&token=${passwordToken}`;
+
+    // 📧 Send email
+    await sendEmail({
+      toEmail: user.email,
+      type: "SET_PASSWORD",
+      data: {
+        resetUrl,
+      },
+    });
+
+    // 💾 Save token
+    user.passwordSetupToken = passwordToken;
+    user.passwordSetupExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      msg: "Set password email sent successfully",
+    });
+  } catch (error) {
+    console.error("Resend Set Password Error:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};

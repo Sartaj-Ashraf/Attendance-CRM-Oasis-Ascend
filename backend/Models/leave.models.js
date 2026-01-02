@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const leaveSchema = new mongoose.Schema(
   {
     user: {
@@ -8,17 +9,22 @@ const leaveSchema = new mongoose.Schema(
       index: true,
     },
 
-    type: {
+    subject: {
       type: String,
-      enum: ["sick", "casual", "annual", "maternity"],
-      default: "casual",
       required: true,
+      trim: true,
+      maxlength: 100,
     },
 
     days: {
       type: Number,
       required: true,
       min: 1,
+    },
+
+    reason: {
+      type: String, // HTML from Jodit
+      required: true,
     },
 
     status: {
@@ -28,21 +34,20 @@ const leaveSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ✅ NEW FIELD
     isPaid: {
       type: Boolean,
-      default: null, // null = not decided yet
+      default: null, // decided on approval
     },
 
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      default: null,
     },
 
-    reason: {
-      type: String,
-      required: true,
-      trim: true,
+    approvedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

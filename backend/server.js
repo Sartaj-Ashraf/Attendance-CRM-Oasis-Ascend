@@ -47,7 +47,7 @@ app.use("/user", userRouter);
 app.use("/owner", ownerRoute);
 app.use("/department", departmentRoute);
 app.use("/api", commonRoute);
-app.use("/leave", leaveRoutes);
+app.use("/leaves", leaveRoutes);
 app.use("/auth", authRoute);
 // auth middleware
 import seedRoutes from "./routes/seed.routes.js";

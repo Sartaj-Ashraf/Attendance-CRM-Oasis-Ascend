@@ -6,10 +6,12 @@ import {
   resendEmailOtp,
   verifyEmail,
   resendSetPasswordEmail,
+  editProfile,
 } from "../Controllers/auth.controllers.js";
 const router = express.Router();
 
 // ✅ verify password route
+router.patch("/edit-profile", authMiddleware, editProfile);
 router.post("/verify-password", authMiddleware, verifyPassword);
 router.put("/setPendingEmail", authMiddleware, setPendingEmail);
 router.post("/resendOtp", authMiddleware, resendEmailOtp);

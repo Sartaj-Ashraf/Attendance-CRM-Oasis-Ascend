@@ -7,7 +7,7 @@ import { getAttendanceByDate } from "../Controllers/attendence.controller.js";
 // router.get("/statuses", getAllStatuses);
 router.get("/isAuth", authMiddleware, async (req, res) => {
   const user = await UserModel.findById(req.user.id)
-    .select("username email role department")
+    .select("username email role department phone")
     .populate("department", "name");
 
   if (!user) {
@@ -20,8 +20,9 @@ router.get("/isAuth", authMiddleware, async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      phone:user.phone,
       department: user.department,
-    },
+    },  
   });
 });
 router.get("/GetAttendanceByDate", authMiddleware, getAttendanceByDate);

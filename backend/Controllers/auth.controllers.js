@@ -5,6 +5,82 @@ import { sendEmail } from "../services/email.service.js";
 import nodemailer from "nodemailer";
 import GenerateToken from "../utils/GenrateToken.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
+
+export const editProfile = async (req, res) => {
+  try {
+    const userId = req.user._id; // from auth middleware
+    const { username, phone } = req.body;
+
+    /* ================= VALIDATION ================= */
+    if (!username && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Nothing to update",
+      });
+    }
+
+    const updateData = {};
+
+    /* ================= USERNAME ================= */
+    if (username) {
+      const trimmedUsername = username.trim().toLowerCase();
+
+      if (trimmedUsername.length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Username must be at least 3 characters",
+        });
+      }
+
+      // Optional: unique username check
+      const exists = await UserModel.findOne({
+        username: trimmedUsername,
+        _id: { $ne: userId },
+      });
+
+      if (exists) {
+        return res.status(409).json({
+          success: false,
+          message: "Username already taken",
+        });
+      }
+
+      updateData.username = trimmedUsername;
+    }
+
+    /* ================= PHONE ================= */
+    if (phone) {
+      updateData.phone = phone;
+    }
+
+    /* ================= UPDATE ================= */
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, select: "-password" }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Edit profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 /* =====================================================
    VERIFY CURRENT PASSWORD
 ===================================================== */

@@ -1,37 +1,74 @@
 import Leave from "../Models/Leave.models.js";
+import UserModel from "../Models/User.model.js";
+import sanitizeHtml from "sanitize-html";
 
 /* =====================================================
    APPLY LEAVE (EMPLOYEE)
 ===================================================== */
 export const applyLeave = async (req, res) => {
   try {
-    const { days, type, reason } = req.body;
+    const { days, subject, reason } = req.body;
 
-    if (!days || days < 1 || !type || !reason) {
+    // ❌ Client error → 400
+    if (!days || !subject || !reason) {
       return res.status(400).json({
-        message: "Days, type and reason are required",
+        success: false,
+        message: "Days, subject and reason are required",
       });
     }
+
+    // 🔐 Sanitize HTML from Jodit editor
+    const safeReason = sanitizeHtml(reason);
 
     const leave = await Leave.create({
       user: req.user.id,
       days,
-      type,
-      reason,
+      subject,
+      reason: safeReason,
     });
 
+    // ✅ Success
     return res.status(201).json({
-      message: "Leave request submitted successfully",
+      success: true,
+      message: "Leave applied successfully",
       data: leave,
     });
   } catch (error) {
+    // 🧠 Log full error (important)
+    console.error("Apply Leave Error:", error);
+
+    // ❌ Server error → 500
     return res.status(500).json({
+      success: false,
       message: "Failed to apply leave",
+    });
+  }
+};
+
+export const getMyLeaves = async (req, res) => {
+  try {
+    const leaves = await Leave.find({
+      user: req.user.id,
+    })
+      .populate("approvedBy", "username role")
+      .sort({ createdAt: -1 });
+
+      
+    return res.status(200).json({
+      success: true,
+      data: leaves,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch user leaves",
       error: error.message,
     });
   }
 };
 
+/* =====================================================
+   APPROVE LEAVE (MANAGER / OWNER)
+===================================================== */
 export const approveLeave = async (req, res) => {
   try {
     const { leaveId } = req.params;
@@ -55,17 +92,19 @@ export const approveLeave = async (req, res) => {
     }
 
     leave.status = "approved";
-    leave.isPaid = isPaid; // ✅ decision made here
-    leave.approvedBy = req.user._id;
+    leave.isPaid = isPaid;
+    leave.approvedBy = req.user.id;
+    leave.approvedAt = new Date();
 
     await leave.save();
 
-    return res.status(200).json({
+    res.status(200).json({
+      success: true,
       message: "Leave approved successfully",
       data: leave,
     });
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       message: "Failed to approve leave",
       error: error.message,
     });
@@ -73,7 +112,7 @@ export const approveLeave = async (req, res) => {
 };
 
 /* =====================================================
-   REJECT LEAVE
+   REJECT LEAVE (MANAGER / OWNER)
 ===================================================== */
 export const rejectLeave = async (req, res) => {
   try {
@@ -91,44 +130,61 @@ export const rejectLeave = async (req, res) => {
     }
 
     leave.status = "rejected";
-    leave.isPaid = false; // optional but safe
+    leave.isPaid = false;
     leave.approvedBy = req.user._id;
+    leave.approvedAt = new Date();
 
     await leave.save();
 
-    return res.status(200).json({
+    res.status(200).json({
+      success: true,
       message: "Leave rejected successfully",
       data: leave,
     });
   } catch (error) {
-    return res.status(500).json({
+    res.status(500).json({
       message: "Failed to reject leave",
       error: error.message,
     });
   }
 };
 
-// controllers/leave.controller.js
+/* =====================================================
+   GET ALL LEAVES (ROLE BASED)
+===================================================== */
 export const getAllLeaves = async (req, res) => {
   try {
     let filter = {};
 
-    // 🔐 MANAGER → ONLY DEPARTMENT USERS
+    // EMPLOYEE → own leaves
+    if (req.user.role === "employee") {
+      filter.user = req.user._id;
+    }
+
+    // MANAGER → department leaves
     if (req.user.role === "manager") {
-      const users = await User.find({
+      const users = await UserModel.find({
         department: req.user.department,
       }).select("_id");
 
       filter.user = { $in: users.map((u) => u._id) };
     }
 
+    // OWNER → all leaves (no filter)
+
     const leaves = await Leave.find(filter)
       .populate("user", "username email department")
       .populate("approvedBy", "username role")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ data: leaves });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(200).json({
+      success: true,
+      data: leaves,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch leaves",
+      error: error.message,
+    });
   }
 };

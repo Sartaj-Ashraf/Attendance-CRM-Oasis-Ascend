@@ -16,6 +16,11 @@ const leaveSchema = new mongoose.Schema(
       maxlength: 100,
     },
 
+    startDate: {
+      type: Date,
+      required: true, // ✅ REQUIRED
+    },
+
     days: {
       type: Number,
       required: true,
@@ -23,7 +28,7 @@ const leaveSchema = new mongoose.Schema(
     },
 
     reason: {
-      type: String, // HTML from Jodit
+      type: String,
       required: true,
     },
 
@@ -36,7 +41,7 @@ const leaveSchema = new mongoose.Schema(
 
     isPaid: {
       type: Boolean,
-      default: null, // decided on approval
+      default: null,
     },
 
     approvedBy: {

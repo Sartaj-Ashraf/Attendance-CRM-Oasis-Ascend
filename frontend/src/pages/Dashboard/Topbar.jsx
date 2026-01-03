@@ -1,4 +1,3 @@
-
 // import OasisAscendLogo from "../../components/Oalogo";
 
 // const TopBar = () => {
@@ -27,17 +26,14 @@ const TopBar = () => {
       <OasisAscendLogo size={42} />
 
       <div className="flex items-center gap-4">
-         <Clock />
-        <div className="text-right leading-tight">
-        </div>
-         <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+        <Clock />
+        <div className="text-right leading-tight"></div>
+        <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
           {user?.username?.[0]?.toUpperCase() || "U"}
-         </div>
-         </div>
+        </div>
+      </div>
     </header>
   );
 };
 
 export default TopBar;
-
-

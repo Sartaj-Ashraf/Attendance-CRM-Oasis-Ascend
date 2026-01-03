@@ -15,6 +15,7 @@ import {
   // getAllEmployees,
   getAllEmployeesForAttendance,
   createOwner,
+  forceLogoutAllUsers
 } from "../Controllers/owner.controller.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
@@ -41,5 +42,6 @@ router.get(
   isAdmin,
   getAllEmployeesForAttendance
 );
+router.post("/force-logout-all", authMiddleware, isAdmin, forceLogoutAllUsers);
 
 export default router;

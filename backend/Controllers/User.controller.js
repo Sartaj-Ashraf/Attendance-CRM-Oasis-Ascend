@@ -158,7 +158,6 @@ export const loginUser = async (req, res) => {
 
 export const getCurrentAttendance = async (req, res) => {
   try {
-    // ✅ FIX: use ONE variable name
     const userId =
       req.params.userId && req.user.role === "owner"
         ? req.params.userId
@@ -215,10 +214,12 @@ export const getCurrentAttendance = async (req, res) => {
       sort: { date: -1 },
     });
 
+    // ✅ THIS IS THE FIX
     return res.status(200).json({
       success: true,
       user,
-      ...result,
+      data: result.data,
+      pagination: result.meta,
     });
   } catch (error) {
     console.error("getCurrentAttendance error:", error);

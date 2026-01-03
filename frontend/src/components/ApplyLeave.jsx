@@ -6,12 +6,14 @@ import JoditEditor from "jodit-react";
 const LeaveDashboard = () => {
   const editor = useRef(null);
 
+  /* ================= UI STATES ================= */
   const [showApply, setShowApply] = useState(false);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  /* ================= APPLY LEAVE FORM ================= */
+  /* ================= FORM ================= */
   const [form, setForm] = useState({
+    startDate: "",
     days: "",
     subject: "",
     reason: "",
@@ -19,6 +21,11 @@ const LeaveDashboard = () => {
 
   /* ================= LEAVE HISTORY ================= */
   const [leaveHistory, setLeaveHistory] = useState([]);
+
+  /* ================= PAGINATION ================= */
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [pagination, setPagination] = useState(null);
 
   /* ================= JODIT CONFIG ================= */
   const config = useMemo(
@@ -32,21 +39,28 @@ const LeaveDashboard = () => {
     []
   );
 
-  /* ================= FETCH CURRENT USER LEAVES ================= */
-  const fetchMyLeaves = async () => {
+  /* ================= FETCH MY LEAVES ================= */
+  const fetchMyLeaves = async (pageNumber = page) => {
     try {
       setHistoryLoading(true);
-      const res = await api.get("/leaves/my");
+
+      const res = await api.get("/leaves/my", {
+        params: { page: pageNumber, limit },
+      });
+
       setLeaveHistory(res.data.data || []);
-    } catch {
-      toast.error("Failed to load leave history");
+      setPagination(res.data.pagination);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || "Failed to load leave history"
+      );
     } finally {
       setHistoryLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMyLeaves();
+    fetchMyLeaves(1);
   }, []);
 
   /* ================= HANDLERS ================= */
@@ -61,7 +75,12 @@ const LeaveDashboard = () => {
     e.preventDefault();
     if (loading) return;
 
-    if (!form.days || !form.subject.trim() || !form.reason.trim()) {
+    if (
+      !form.startDate ||
+      !form.days ||
+      !form.subject.trim() ||
+      !form.reason.trim()
+    ) {
       toast.error("All fields are required");
       return;
     }
@@ -70,6 +89,7 @@ const LeaveDashboard = () => {
       setLoading(true);
 
       await api.post("/leaves/apply", {
+        startDate: form.startDate,
         days: Number(form.days),
         subject: form.subject,
         reason: form.reason,
@@ -77,9 +97,15 @@ const LeaveDashboard = () => {
 
       toast.success("Leave request submitted successfully");
 
-      setForm({ days: "", subject: "", reason: "" });
+      setForm({
+        startDate: "",
+        days: "",
+        subject: "",
+        reason: "",
+      });
+
       setShowApply(false);
-      fetchMyLeaves();
+      fetchMyLeaves(1);
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Failed to submit leave request"
@@ -109,7 +135,9 @@ const LeaveDashboard = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* ================= HEADER ================= */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Leave Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Leave Management
+        </h1>
 
         <button
           onClick={() => setShowApply(true)}
@@ -129,7 +157,7 @@ const LeaveDashboard = () => {
           <table className="w-full text-sm">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-6 py-3 text-left">Date</th>
+                <th className="px-6 py-3 text-left">Start Date</th>
                 <th className="px-6 py-3 text-left">Subject</th>
                 <th className="px-6 py-3 text-left">Days</th>
                 <th className="px-6 py-3 text-left">Status</th>
@@ -155,13 +183,10 @@ const LeaveDashboard = () => {
                 leaveHistory.map((leave) => (
                   <tr key={leave._id}>
                     <td className="px-6 py-4">
-                      {new Date(leave.createdAt).toLocaleDateString()}
+                      {new Date(leave.startDate).toLocaleDateString()}
                     </td>
-
                     <td className="px-6 py-4">{leave.subject}</td>
-
                     <td className="px-6 py-4">{leave.days}</td>
-
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs ${statusColor(
@@ -171,7 +196,6 @@ const LeaveDashboard = () => {
                         {leave.status.toUpperCase()}
                       </span>
                     </td>
-
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs ${paidBadge(
@@ -185,9 +209,8 @@ const LeaveDashboard = () => {
                           : "UNPAID"}
                       </span>
                     </td>
-
                     <td className="px-6 py-4">
-                      {leave.approvedBy ? leave.approvedBy.username : "—"}
+                      {leave.approvedBy?.username || "—"}
                     </td>
                   </tr>
                 ))
@@ -195,12 +218,47 @@ const LeaveDashboard = () => {
             </tbody>
           </table>
         </div>
+
+        {/* ================= PAGINATION ================= */}
+        {pagination && (
+          <div className="flex justify-between items-center px-6 py-4 border-t">
+            <p className="text-sm text-gray-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                disabled={!pagination.hasPrev}
+                onClick={() => {
+                  const prev = page - 1;
+                  setPage(prev);
+                  fetchMyLeaves(prev);
+                }}
+                className="px-4 py-1.5 border rounded-md text-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <button
+                disabled={!pagination.hasNext}
+                onClick={() => {
+                  const next = page + 1;
+                  setPage(next);
+                  fetchMyLeaves(next);
+                }}
+                className="px-4 py-1.5 border rounded-md text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ================= APPLY LEAVE MODAL ================= */}
       {showApply && (
         <div className="fixed inset-0 z-50 bg-black/40 flex p-6 items-center justify-center">
-          <div className="bg-white w-full max-w-7xl  rounded-xl shadow-xl ">
+          <div className="bg-white w-full max-w-7xl rounded-xl shadow-xl">
             <div className="px-6 py-4 border-b flex justify-between items-center">
               <h2 className="text-lg font-bold">Apply for Leave</h2>
               <button
@@ -212,6 +270,14 @@ const LeaveDashboard = () => {
             </div>
 
             <form onSubmit={submitLeave} className="p-6 space-y-4">
+              <input
+                type="date"
+                name="startDate"
+                value={form.startDate}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+
               <input
                 type="number"
                 name="days"
@@ -230,16 +296,14 @@ const LeaveDashboard = () => {
                 className="w-full border rounded-lg px-3 py-2"
               />
 
-              <div className="jodit-wrapper">
-                <JoditEditor
-                  ref={editor}
-                  value={form.reason}
-                  config={config}
-                  onChange={(content) =>
-                    setForm((prev) => ({ ...prev, reason: content }))
-                  }
-                />
-              </div>
+              <JoditEditor
+                ref={editor}
+                value={form.reason}
+                config={config}
+                onChange={(content) =>
+                  setForm((prev) => ({ ...prev, reason: content }))
+                }
+              />
 
               <div className="flex justify-end gap-3 pt-4">
                 <button

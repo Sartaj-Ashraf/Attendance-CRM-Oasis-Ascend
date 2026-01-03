@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../../axios/axios";
 import { toast } from "sonner";
+
 import ChangeEmailModal from "./ChangeEmailModal";
+import ChangePasswordModal from"../ChangePasswordModal.jsx"
 
 const MyProfile = () => {
+  /* ================= STATES ================= */
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -13,6 +16,8 @@ const MyProfile = () => {
 
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailModalMode, setEmailModalMode] = useState("change");
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const [pendingEmail, setPendingEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(true);
@@ -56,15 +61,16 @@ const MyProfile = () => {
 
   /* ================= VERIFY PASSWORD ================= */
   const verifyPassword = async () => {
-    if (!password) return toast.error("Enter password");
+    if (!password) return toast.error("Enter your password");
 
     try {
       setSaving(true);
       await api.post("/auth/verify-password", { password });
+
       toast.success("Password verified");
       setPasswordVerified(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Incorrect password");
+      toast.error(err?.response?.data?.message || "Incorrect password");
     } finally {
       setSaving(false);
     }
@@ -74,36 +80,40 @@ const MyProfile = () => {
   const saveProfile = async () => {
     try {
       setSaving(true);
+
       await api.put("/user/updateProfile", {
         username: profile.username,
         phone: profile.phone,
       });
-      toast.success("Profile updated");
+
+      toast.success("Profile updated successfully");
 
       setIsEditing(false);
       setPasswordVerified(false);
       setPassword("");
     } catch {
-      toast.error("Update failed");
+      toast.error("Failed to update profile");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <p className="p-6">Loading...</p>;
+  if (loading) return <p className="p-6">Loading profile...</p>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-2xl shadow border">
-
+        {/* ================= HEADER ================= */}
         <div className="px-6 py-5 border-b">
           <h2 className="text-xl font-semibold">My Profile</h2>
         </div>
 
         <div className="p-6">
+          {/* ================= PASSWORD CONFIRM ================= */}
           {isEditing && !passwordVerified && (
             <div className="max-w-sm mx-auto text-center space-y-4">
-              <h3 className="text-lg font-medium">Confirm Password</h3>
+              <h3 className="text-lg font-medium">Confirm your password</h3>
+
               <input
                 type="password"
                 value={password}
@@ -118,8 +128,10 @@ const MyProfile = () => {
                 >
                   Cancel
                 </button>
+
                 <button
                   onClick={verifyPassword}
+                  disabled={saving}
                   className="px-5 py-2 bg-blue-600 text-white rounded-xl"
                 >
                   Verify
@@ -128,17 +140,15 @@ const MyProfile = () => {
             </div>
           )}
 
+          {/* ================= PROFILE FORM ================= */}
           {(!isEditing || passwordVerified) && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
                 <Field
                   label="Full Name"
                   value={profile.username}
                   disabled={!passwordVerified}
-                  onChange={(v) =>
-                    setProfile({ ...profile, username: v })
-                  }
+                  onChange={(v) => setProfile({ ...profile, username: v })}
                 />
 
                 {/* EMAIL */}
@@ -185,15 +195,14 @@ const MyProfile = () => {
                   label="Phone"
                   value={profile.phone}
                   disabled={!passwordVerified}
-                  onChange={(v) =>
-                    setProfile({ ...profile, phone: v })
-                  }
+                  onChange={(v) => setProfile({ ...profile, phone: v })}
                 />
 
                 <Field label="Role" value={profile.role} disabled />
                 <Field label="Department" value={profile.department} disabled />
               </div>
 
+              {/* ================= ACTIONS ================= */}
               <div className="flex justify-end mt-8 gap-3">
                 {!isEditing && (
                   <button
@@ -205,12 +214,22 @@ const MyProfile = () => {
                 )}
 
                 {passwordVerified && (
-                  <button
-                    onClick={saveProfile}
-                    className="px-6 py-2 bg-green-600 text-white rounded-xl"
-                  >
-                    Save Changes
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowPasswordModal(true)}
+                      className="px-6 py-2 border rounded-xl"
+                    >
+                      Change Password
+                    </button>
+
+                    <button
+                      onClick={saveProfile}
+                      disabled={saving}
+                      className="px-6 py-2 bg-green-600 text-white rounded-xl"
+                    >
+                      Save Changes
+                    </button>
+                  </>
                 )}
               </div>
             </>
@@ -218,6 +237,7 @@ const MyProfile = () => {
         </div>
       </div>
 
+      {/* ================= EMAIL MODAL ================= */}
       {showEmailModal && (
         <ChangeEmailModal
           mode={emailModalMode}
@@ -236,10 +256,16 @@ const MyProfile = () => {
           }}
         />
       )}
+
+      {/* ================= PASSWORD MODAL ================= */}
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </div>
   );
 };
 
+/* ================= FIELD COMPONENT ================= */
 const Field = ({ label, value, disabled, onChange }) => (
   <div>
     <label className="block text-sm font-medium mb-1">{label}</label>

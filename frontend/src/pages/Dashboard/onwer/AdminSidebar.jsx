@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import api from "../../../axios/axios";
 import { AuthContext } from "../../../ContextApi/isAuth";
 
 const AdminSidebar = () => {
   const { user, setIsAuth, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
-
+  const [leaves, setLeaves] = useState(0);
   const logoutHandler = async () => {
     try {
       await api.post("/user/logout");
@@ -17,7 +17,19 @@ const AdminSidebar = () => {
       console.error(error);
     }
   };
+  const leaveCount = async () => {
+    try {
+      const res = await api.get("/leaves/pending-leaves");
+      setLeaves(res.data.pendingLeaves);
+    } catch (error) {
+      console.error(error);
+    } finally {
+    }
+  };
 
+  useEffect(() => {
+    leaveCount();
+  }, []);
   const navItem =
     "nav-link flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:translate-x-1";
 
@@ -114,6 +126,11 @@ const AdminSidebar = () => {
           >
             <i className="fas fa-clipboard-list text-green-500"></i>
             Manage Leave
+            {leaves > 0 && (
+              <sup className="ml-1 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                {leaves}
+              </sup>
+            )}
           </NavLink>
 
           {/* ===== EXTRA SECTION ===== */}

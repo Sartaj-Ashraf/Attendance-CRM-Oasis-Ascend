@@ -12,23 +12,39 @@ import {
   UserCheck,
 } from "lucide-react";
 
+import api from "../axios/axios.js"; // ✅ axios with interceptor
 import ControlCard from "../components/control-center/ControlCard.jsx";
 import ActionButton from "../components/control-center/ActionButton.jsx";
 import MyProfile from "../components/profile/Profile";
+import ConfirmDeleteModal from "../components/delete/ConfirmDelete.jsx"
 
 const OwnerControlCenter = () => {
   const [loading, setLoading] = useState(false);
   const [allUsersBlocked, setAllUsersBlocked] = useState(false);
 
-  const runAction = (message, type = "success") => {
-    if (loading) return;
-    setLoading(true);
-    setTimeout(() => {
-      toast[type](message);
+  // 🔥 Force logout modal state
+  const [showForceLogoutModal, setShowForceLogoutModal] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  /* ================= FORCE LOGOUT API ================= */
+  const forceLogoutAllUsers = async () => {
+    try {
+      setLoading(true);
+
+      await api.post("/owner/force-logout-all");
+
+      toast.warning("All users have been force logged out");
+
+      setShowForceLogoutModal(false);
+      setConfirmText("");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Force logout failed");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
+  /* ================= BLOCK / UNBLOCK (UI ONLY) ================= */
   const toggleBlockUsers = () => {
     const next = !allUsersBlocked;
     setAllUsersBlocked(next);
@@ -37,7 +53,7 @@ const OwnerControlCenter = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* ================= HEADER ================= */}
       <header className="gradient-header text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -50,16 +66,15 @@ const OwnerControlCenter = () => {
 
             <button
               disabled={loading}
-              onClick={() => runAction("Settings saved successfully")}
               className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 disabled:opacity-50"
             >
-              {loading ? "Saving..." : "Save Settings"}
+              {loading ? "Processing..." : "System Active"}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
+      {/* ================= CONTENT ================= */}
       <main className="max-w-7xl mx-auto px-4 py-10 space-y-10">
         {/* Profile */}
         <section className="grid grid-cols-1">
@@ -68,10 +83,10 @@ const OwnerControlCenter = () => {
 
         {/* Actions */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Security */}
+          {/* 🔐 Security */}
           <ControlCard
             title="Security"
-            description="High‑impact system actions"
+            description="High-impact system actions"
             icon={Shield}
             iconColor="text-destructive"
           >
@@ -79,18 +94,18 @@ const OwnerControlCenter = () => {
               variant="danger"
               icon={LogOut}
               text="Force Logout All Users"
-              onClick={() =>
-                runAction("All users logged out forcefully", "warning")
-              }
+              onClick={() => setShowForceLogoutModal(true)}
             />
+
             <ActionButton
               variant="warning"
               icon={KeyRound}
               text="Force Password Reset"
               onClick={() =>
-                runAction("Password reset required for all users", "warning")
+                toast.warning("Password reset feature coming soon")
               }
             />
+
             <ActionButton
               variant={allUsersBlocked ? "success" : "danger"}
               icon={allUsersBlocked ? UserCheck : UserX}
@@ -99,7 +114,7 @@ const OwnerControlCenter = () => {
             />
           </ControlCard>
 
-          {/* Data */}
+          {/* 📦 Data & Backup */}
           <ControlCard
             title="Data & Backup"
             description="Download and backup system data"
@@ -109,23 +124,41 @@ const OwnerControlCenter = () => {
               variant="info"
               icon={Users}
               text="Download Users"
-              onClick={() => runAction("Users exported")}
+              onClick={() => toast.success("Users exported")}
             />
             <ActionButton
               variant="info"
               icon={Download}
               text="Download Attendance"
-              onClick={() => runAction("Attendance exported")}
+              onClick={() => toast.success("Attendance exported")}
             />
             <ActionButton
               variant="primary"
               icon={HardDrive}
               text="Full Backup"
-              onClick={() => runAction("Database backup completed")}
+              onClick={() => toast.success("Database backup completed")}
             />
           </ControlCard>
         </section>
       </main>
+
+      {/* ================= CONFIRM FORCE LOGOUT MODAL ================= */}
+      <ConfirmDeleteModal
+        open={showForceLogoutModal}
+        title="Force Logout All Users"
+        message="This will immediately log out ALL users from the system. This action cannot be undone."
+        confirmText="Force Logout"
+        cancelText="Cancel"
+        confirmValue="LOGOUT"
+        inputValue={confirmText}
+        onInputChange={setConfirmText}
+        loading={loading}
+        onCancel={() => {
+          setShowForceLogoutModal(false);
+          setConfirmText("");
+        }}
+        onConfirm={forceLogoutAllUsers}
+      />
     </div>
   );
 };

@@ -98,6 +98,11 @@ const userSchema = new mongoose.Schema(
     passwordSetupExpires: {
       type: Date,
     },
+
+    versionToken: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

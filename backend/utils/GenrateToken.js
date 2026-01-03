@@ -4,7 +4,8 @@ const GenerateToken = (user) => {
     id: user._id,
     email: user.email,
     role: user.role,
-    department:user.department
+    department: user.department,
+    versionToken: user.versionToken,
   };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "24h" });
 };

@@ -636,3 +636,20 @@ export const BlockedUsers = async (req, res) => {
   }
 };
 
+
+export const forceLogoutAllUsers = async (req, res) => {
+  try {
+    // increment versionToken for everyone
+    await UserModel.updateMany({}, { $inc: { versionToken: 1 } });
+
+    return res.status(200).json({
+      success: true,
+      message: "All users have been force logged out",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to force logout users",
+    });
+  }
+};

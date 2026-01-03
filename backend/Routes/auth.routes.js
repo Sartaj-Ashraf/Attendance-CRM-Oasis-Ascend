@@ -7,6 +7,7 @@ import {
   verifyEmail,
   resendSetPasswordEmail,
   editProfile,
+  changePassword,
 } from "../Controllers/auth.controllers.js";
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.put("/setPendingEmail", authMiddleware, setPendingEmail);
 router.post("/resendOtp", authMiddleware, resendEmailOtp);
 router.post("/verifyEmail", authMiddleware, verifyEmail);
 router.post("/resend-confirmation/:id", authMiddleware, resendSetPasswordEmail);
+router.put("/change-password", authMiddleware, changePassword);
 // router.get
 export default router;

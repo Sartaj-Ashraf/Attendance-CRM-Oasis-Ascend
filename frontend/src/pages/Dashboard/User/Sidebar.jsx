@@ -1,4 +1,3 @@
-
 // import { NavLink, useNavigate } from "react-router-dom";
 // import { useContext } from "react";
 // import api from "../../../axios/axios";
@@ -197,21 +196,21 @@ const Sidebar = () => {
           >
             ✈️ Leave Management
           </NavLink>
-            <NavLink
+          {/* <NavLink
             to="/dashboard/history"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
             }
           >
            📜 Attendance History
-          </NavLink>
-               <NavLink
+          </NavLink> */}
+          <NavLink
             to="/dashboard/notifications"
             className={({ isActive }) =>
               `${navItem} ${isActive ? activeNav : inactiveNav}`
             }
           >
-           🔔 Notifications
+            🔔 Notifications
           </NavLink>
           <NavLink
             to="/dashboard/profile"
@@ -251,4 +250,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

@@ -76,7 +76,7 @@ const Login = () => {
           gravity={isNight ? 0.35 : 0.6}
           friction={isNight ? 0.95 : 0.85}
           // colors={["#6366F1", "#8B5CF6", "#00000"]}
-          cursorColor="#6366F1"
+          // cursorColor="#6366F1"
         />
         <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-br from-indigo-500/10 to-violet-500/10" />

@@ -3,7 +3,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import Login from "./pages/Login.jsx";
-
+import { FlipWordsDemo } from "./components/welcome.jsx";
 import Resetpassword from "./pages/Resetpassword";
 import Verify from "./pages/Verify";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -32,7 +32,7 @@ import ApplyLeave from "./components/ApplyLeave.jsx";
 import ManageLeaves from "./components/ManageLeaves.jsx";
 import EditComponent from "./pages/Dashboard/EditComponent.jsx";
 import TopBar from "./pages/Dashboard/Topbar.jsx";
-import Profile from './components/profile/Profile.jsx'
+import Profile from "./components/profile/Profile.jsx";
 import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
 import Notifications from "./pages/Dashboard/User/Notifications.jsx";
 import Salary from "./pages/Dashboard/User/Salary.jsx";
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/test2",
-    element: <AttendanceDetails />,
+    element: <FlipWordsDemo />,
   },
   {
     path: "/",
@@ -98,21 +98,21 @@ const router = createBrowserRouter([
         path: "leave",
         element: <ApplyLeave />,
       },
-       {
+      {
         path: "salary",
         element: <Salary />,
       },
-         {
+      {
         path: "profile",
-        element: <Profile/>,
+        element: <Profile />,
       },
-        {
+      {
         path: "notifications",
-        element: <Notifications/>,
+        element: <Notifications />,
       },
-       {
+      {
         path: "history",
-        element: <AttendanceHistory/>,
+        element: <AttendanceHistory />,
       },
       {
         path: "settings",

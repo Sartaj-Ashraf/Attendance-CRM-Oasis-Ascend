@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import api from "../../../axios/axios.js";
-// import ConfirmDeleteModal from "../../../components/common/ConfirmDeleteModal";
 import ConfirmDeleteModal from "../../../components/delete/ConfirmDelete.jsx";
 
 const Departments = () => {
   const [departments, setDepartments] = useState([]);
-  const [employeeCounts, setEmployeeCounts] = useState({});
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -14,39 +12,16 @@ const Departments = () => {
   const [newDepartmentName, setNewDepartmentName] = useState("");
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
+
   const inputRef = useRef(null);
-  // 🔹 Fetch departments
+
+  /* ================= FETCH DEPARTMENTS ================= */
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
-      const deptList = res.data.data || res.data || [];
-      setDepartments(deptList);
-
-      // 🔥 fetch employee count per department
-      fetchEmployeeCounts(deptList);
-    } catch {
+      setDepartments(res.data.data || []);
+    } catch (error) {
       toast.error("Failed to fetch departments");
-    }
-  };
-
-  // 🔹 Fetch employees count using your API
-  const fetchEmployeeCounts = async (deptList) => {
-    try {
-      const counts = {};
-
-      await Promise.all(
-        deptList.map(async (dept) => {
-          const res = await api.get("/owner/getAllUsers", {
-            params: { department: dept._id },
-          });
-
-          counts[dept._id] = res.data.data?.length || 0;
-        })
-      );
-
-      setEmployeeCounts(counts);
-    } catch {
-      toast.error("Failed to fetch employee counts");
     }
   };
 
@@ -54,7 +29,7 @@ const Departments = () => {
     fetchDepartments();
   }, []);
 
-  // 🔹 Create department
+  /* ================= CREATE DEPARTMENT ================= */
   const handleCreateDepartment = async () => {
     if (!newDepartmentName.trim()) {
       toast.error("Please enter a department name");
@@ -70,19 +45,20 @@ const Departments = () => {
       setNewDepartmentName("");
       setShowCreateModal(false);
       fetchDepartments();
-    } catch {
-      toast.error("Failed to create department");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to create department"
+      );
     }
   };
 
-  // 🔹 Open delete modal
+  /* ================= DELETE ================= */
   const openDeleteModal = (dept) => {
     setDepartmentToDelete(dept);
     setDeleteConfirmName("");
     setShowDeleteModal(true);
   };
 
-  // 🔹 Delete department
   const handleDeleteDepartment = async () => {
     try {
       await api.delete(`/department/delete/${departmentToDelete._id}`);
@@ -90,17 +66,21 @@ const Departments = () => {
       toast.success("Department deleted successfully");
       setShowDeleteModal(false);
       setDepartmentToDelete(null);
-      setDeleteConfirmName("");
       fetchDepartments();
-    } catch {
-      toast.error("Failed to delete department");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete department"
+      );
     }
   };
+
+  /* ================= AUTO FOCUS ================= */
   useEffect(() => {
     if (showCreateModal && inputRef.current) {
       inputRef.current.focus();
     }
   }, [showCreateModal]);
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -121,6 +101,7 @@ const Departments = () => {
           <thead className="bg-gray-100 text-gray-700">
             <tr>
               <th className="px-6 py-3">Department</th>
+              <th className="px-6 py-3">Managers</th>
               <th className="px-6 py-3">Total Employees</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
@@ -129,7 +110,7 @@ const Departments = () => {
           <tbody>
             {departments.length === 0 ? (
               <tr>
-                <td colSpan="3" className="text-center py-6 text-gray-500">
+                <td colSpan="4" className="text-center py-6 text-gray-500">
                   No departments found
                 </td>
               </tr>
@@ -139,14 +120,35 @@ const Departments = () => {
                   key={dept._id}
                   className="border-b hover:bg-gray-50 transition"
                 >
+                  {/* Department Name */}
                   <td className="px-6 py-4 font-medium text-gray-800">
                     {dept.name}
                   </td>
 
+                  {/* Managers */}
                   <td className="px-6 py-4 text-gray-600">
-                    {employeeCounts[dept._id] ?? "—"}
+                    {dept.managers?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {dept.managers.map((mgr) => (
+                          <span
+                            key={mgr._id}
+                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md"
+                          >
+                            {mgr.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
 
+                  {/* Members Count */}
+                  <td className="px-6 py-4 text-gray-700 font-semibold">
+                    {dept.membersCount ?? 0}
+                  </td>
+
+                  {/* Actions */}
                   <td className="px-6 py-4">
                     <button
                       onClick={() => openDeleteModal(dept)}
@@ -162,9 +164,9 @@ const Departments = () => {
         </table>
       </div>
 
-      {/* Create Department Modal */}
+      {/* ================= CREATE MODAL ================= */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-96 shadow-xl">
             <h2 className="text-xl font-bold text-gray-800 mb-4">
               Create New Department
@@ -198,7 +200,7 @@ const Departments = () => {
         </div>
       )}
 
-      {/* ✅ Reusable Delete Confirmation Modal */}
+      {/* ================= DELETE MODAL ================= */}
       <ConfirmDeleteModal
         open={showDeleteModal}
         title="Delete Department"

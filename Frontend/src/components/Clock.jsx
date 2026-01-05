@@ -7,8 +7,7 @@ const Clock = () => {
     const interval = setInterval(() => {
       setTime(new Date());
     }, 1000);
-
-    // cleanup (very important)
+    
     return () => clearInterval(interval);
   }, []);
 

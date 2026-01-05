@@ -46,10 +46,6 @@ const router = createBrowserRouter([
     element: <EditComponent />,
   },
   {
-    path: "/test3",
-    element: <ApplyLeave />,
-  },
-  {
     path: "/test",
     element: <ManageLeaves />,
   },
@@ -136,6 +132,14 @@ const router = createBrowserRouter([
       {
         path: "attendance",
         element: <MakeAttendance />,
+      },
+      {
+        path: "manage-leaves",
+        element: <ManageLeaves />,
+      },
+       {
+        path: "department",
+        element: <Departments />,
       },
       {
         path: "employees",

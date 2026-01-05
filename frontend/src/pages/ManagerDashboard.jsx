@@ -7,7 +7,7 @@ const ManagerDashboard = () => {
     <div className="flex bg-gray-50 min-h-screen">
       <ManagerSidebar />
 
-      <div className="flex-1 p-6">
+      <div className="ml-64 w-full min-h-screen bg-gray-50">
         <Topbar />
         <Outlet />
       </div>

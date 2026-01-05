@@ -218,13 +218,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import api from "../../../axios/axios";
+import api from "../../../axios/axios.js";
 import ConfirmDeleteModal from "../../../components/delete/ConfirmDelete.jsx";
 
 const Departments = () => {
   const [departments, setDepartments] = useState([]);
-  const [employeeCounts, setEmployeeCounts] = useState({});
-  const [userRole, setUserRole] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -235,48 +233,13 @@ const Departments = () => {
 
   const inputRef = useRef(null);
 
-  /* ================= AUTH USER ================= */
-  useEffect(() => {
-    const fetchAuth = async () => {
-      try {
-        const res = await api.get("/api/isAuth");
-        setUserRole(res.data.user.role);
-      } catch {
-        toast.error("Failed to get user info");
-      }
-    };
-    fetchAuth();
-  }, []);
-
   /* ================= FETCH DEPARTMENTS ================= */
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
-      const list = res.data.data || res.data || [];
-      setDepartments(list);
-
-      // 👇 Fetch employee count for BOTH owner & manager
-      fetchEmployeeCounts(list);
-    } catch {
+      setDepartments(res.data.data || []);
+    } catch (error) {
       toast.error("Failed to fetch departments");
-    }
-  };
-
-  /* ================= EMPLOYEE COUNT ================= */
-  const fetchEmployeeCounts = async (deptList) => {
-    try {
-      const counts = {};
-      await Promise.all(
-        deptList.map(async (dept) => {
-          const res = await api.get("/owner/getAllUsers", {
-            params: { department: dept._id },
-          });
-          counts[dept._id] = res.data.data?.length || 0;
-        })
-      );
-      setEmployeeCounts(counts);
-    } catch {
-      toast.error("Failed to load employee counts");
     }
   };
 
@@ -284,7 +247,7 @@ const Departments = () => {
     if (userRole) fetchDepartments();
   }, [userRole]);
 
-  /* ================= CREATE DEPARTMENT (OWNER) ================= */
+  /* ================= CREATE DEPARTMENT ================= */
   const handleCreateDepartment = async () => {
     if (!newDepartmentName.trim()) {
       toast.error("Enter department name");
@@ -299,12 +262,14 @@ const Departments = () => {
       setNewDepartmentName("");
       setShowCreateModal(false);
       fetchDepartments();
-    } catch {
-      toast.error("Failed to create department");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to create department"
+      );
     }
   };
 
-  /* ================= DELETE DEPARTMENT (OWNER) ================= */
+  /* ================= DELETE ================= */
   const openDeleteModal = (dept) => {
     setDepartmentToDelete(dept);
     setDeleteConfirmName("");
@@ -316,12 +281,16 @@ const Departments = () => {
       await api.delete(`/department/delete/${departmentToDelete._id}`);
       toast.success("Department deleted");
       setShowDeleteModal(false);
+      setDepartmentToDelete(null);
       fetchDepartments();
-    } catch {
-      toast.error("Delete failed");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete department"
+      );
     }
   };
 
+  /* ================= AUTO FOCUS ================= */
   useEffect(() => {
     if (showCreateModal && inputRef.current) {
       inputRef.current.focus();
@@ -352,12 +321,9 @@ const Departments = () => {
           <thead className="bg-gray-100 text-gray-700">
             <tr>
               <th className="px-6 py-3">Department</th>
-              <th className="px-6 py-3">Manager</th>
-              <th className="px-6 py-3">Employees</th>
-
-              {userRole === "owner" && (
-                <th className="px-6 py-3">Actions</th>
-              )}
+              <th className="px-6 py-3">Managers</th>
+              <th className="px-6 py-3">Total Employees</th>
+              <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
 
@@ -374,30 +340,35 @@ const Departments = () => {
                   key={dept._id}
                   className="border-b hover:bg-gray-50 transition"
                 >
-                  {/* NAME */}
-                  <td className="px-6 py-4 font-medium">
+                  {/* Department Name */}
+                  <td className="px-6 py-4 font-medium text-gray-800">
                     {dept.name}
                   </td>
 
-                  {/* MANAGER */}
+                  {/* Managers */}
                   <td className="px-6 py-4 text-gray-600">
-                    {dept.manager ? (
-                      <>
-                        <p className="font-medium">
-                          {dept.manager.username}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {dept.manager.email}
-                        </p>
-                      </>
+                    {dept.managers?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {dept.managers.map((mgr) => (
+                          <span
+                            key={mgr._id}
+                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md"
+                          >
+                            {mgr.name}
+                          </span>
+                        ))}
+                      </div>
                     ) : (
-                      <span className="text-gray-400">
-                        Not Assigned
-                      </span>
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
 
-                  {/* EMPLOYEE COUNT */}
+                  {/* Members Count */}
+                  <td className="px-6 py-4 text-gray-700 font-semibold">
+                    {dept.membersCount ?? 0}
+                  </td>
+
+                  {/* Actions */}
                   <td className="px-6 py-4">
                     {employeeCounts[dept._id] ?? "—"}
                   </td>
@@ -421,7 +392,7 @@ const Departments = () => {
       </div>
 
       {/* ================= CREATE MODAL ================= */}
-      {userRole === "owner" && showCreateModal && (
+      {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-96 shadow-xl">
             <h2 className="text-xl font-bold mb-4">
@@ -456,19 +427,17 @@ const Departments = () => {
       )}
 
       {/* ================= DELETE MODAL ================= */}
-      {userRole === "owner" && (
-        <ConfirmDeleteModal
-          open={showDeleteModal}
-          title="Delete Department"
-          message={`Type "${departmentToDelete?.name}" to confirm deletion.`}
-          confirmText="Delete"
-          confirmValue={departmentToDelete?.name}
-          inputValue={deleteConfirmName}
-          onInputChange={setDeleteConfirmName}
-          onConfirm={handleDeleteDepartment}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
+      <ConfirmDeleteModal
+        open={showDeleteModal}
+        title="Delete Department"
+        message={`Type "${departmentToDelete?.name}" to confirm deletion.`}
+        confirmText="Delete"
+        confirmValue={departmentToDelete?.name}
+        inputValue={deleteConfirmName}
+        onInputChange={setDeleteConfirmName}
+        onConfirm={handleDeleteDepartment}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </div>
   );
 };

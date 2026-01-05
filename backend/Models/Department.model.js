@@ -10,6 +10,16 @@ const departmentSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    members: {
+      type: Number,
+      default: 0,
+    },
+    managers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );

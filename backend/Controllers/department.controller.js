@@ -1,28 +1,49 @@
 import Department from "../models/department.model.js";
 import mongoose from "mongoose";
-
+import userModel from "../Models/User.model.js";
 /* ================= CREATE DEPARTMENT ================= */
 export const createDepartment = async (req, res) => {
   try {
     const { name } = req.body || {};
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         message: "Department name is required",
       });
     }
 
-    const existingDepartment = await Department.findOne({ name });
+    const cleanName = name.trim().toUpperCase();
 
+    // 🔍 find ANY department with same name
+    const existingDepartment = await Department.findOne({
+      name: cleanName,
+    });
+
+    // ♻️ restore if soft-deleted
     if (existingDepartment) {
+      if (existingDepartment.isActive === false) {
+        existingDepartment.isActive = true;
+        await existingDepartment.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "Department restored successfully",
+          data: existingDepartment,
+        });
+      }
+
       return res.status(409).json({
         success: false,
         message: "Department already exists",
       });
     }
 
-    const department = await Department.create({ name });
+    // ✅ create new
+    const department = await Department.create({
+      name: cleanName,
+      isActive: true,
+    });
 
     return res.status(201).json({
       success: true,
@@ -31,10 +52,18 @@ export const createDepartment = async (req, res) => {
     });
   } catch (error) {
     console.error("Create Department Error:", error);
+
+    // ⚠️ duplicate key safety
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Department already exists",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Error creating department",
-      error: error.message,
     });
   }
 };
@@ -43,6 +72,11 @@ export const createDepartment = async (req, res) => {
 export const getDepartments = async (req, res) => {
   try {
     const departments = await Department.aggregate([
+      /* ✅ ONLY ACTIVE DEPARTMENTS */
+      {
+        $match: { isActive: true },
+      },
+
       /* ===== LOOKUP USERS (MEMBERS) ===== */
       {
         $lookup: {
@@ -129,7 +163,6 @@ export const deleteDepartment = async (req, res) => {
     }
 
     const department = await Department.findById(id);
-
     if (!department) {
       return res.status(404).json({
         success: false,
@@ -137,15 +170,21 @@ export const deleteDepartment = async (req, res) => {
       });
     }
 
-    // ❌ Prevent delete if members exist
-    if (department.members > 0) {
+    const memberCount = await userModel.countDocuments({
+      department: id,
+      role: "employee",
+      isDeleted: false,
+      isActive: true,
+    });
+
+    if (memberCount > 0) {
       return res.status(400).json({
         success: false,
         message: "Cannot delete department with active members",
       });
     }
 
-    await department.deleteOne();
+    await Department.findByIdAndUpdate(id, { isActive: false });
 
     return res.status(200).json({
       success: true,

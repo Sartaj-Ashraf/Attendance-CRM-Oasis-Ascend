@@ -1,5 +1,3 @@
-// Updated AddUser with axios call to fetch departments (no backend changes)
-
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "../../../axios/axios";
@@ -7,12 +5,11 @@ import api from "../../../axios/axios";
 const AddUser = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
-
+  console.log(departments);
   const [form, setForm] = useState({
     username: "",
     email: "",
     phone: "",
-    role: "employee",
     department: "",
     payment: "paid",
   });
@@ -22,7 +19,8 @@ const AddUser = ({ onClose }) => {
     const fetchDepartments = async () => {
       try {
         const res = await api.get("/department/get");
-        setDepartments(res.data);
+        console.log(res);
+        setDepartments(res.data?.data || []);
       } catch (error) {
         toast.error("Failed to load departments");
       }
@@ -31,7 +29,7 @@ const AddUser = ({ onClose }) => {
     fetchDepartments();
   }, []);
 
-  /* ================= CHANGE ================= */
+  /* ================= CHANGE HANDLER ================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -41,9 +39,22 @@ const AddUser = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!form.department) {
+      toast.error("Please select a department");
+      return;
+    }
+
     try {
       setLoading(true);
-      await api.post("/owner/create", form);
+
+      await api.post("/owner/create", {
+        username: form.username,
+        email: form.email,
+        phone: form.phone,
+        department: form.department,
+        payment: form.payment,
+      });
+
       toast.success("User created successfully");
       onClose(true);
 
@@ -51,7 +62,6 @@ const AddUser = ({ onClose }) => {
         username: "",
         email: "",
         phone: "",
-        role: "employee",
         department: "",
         payment: "paid",
       });
@@ -66,6 +76,7 @@ const AddUser = ({ onClose }) => {
     <form onSubmit={handleSubmit} className="space-y-5">
       <h2 className="text-xl font-bold text-gray-800">Add New Employee</h2>
 
+      {/* USERNAME */}
       <input
         name="username"
         value={form.username}
@@ -76,6 +87,7 @@ const AddUser = ({ onClose }) => {
         className="w-full px-4 py-2 border rounded-lg"
       />
 
+      {/* EMAIL */}
       <input
         name="email"
         type="email"
@@ -87,6 +99,7 @@ const AddUser = ({ onClose }) => {
         className="w-full px-4 py-2 border rounded-lg"
       />
 
+      {/* PHONE */}
       <input
         name="phone"
         value={form.phone}
@@ -114,16 +127,7 @@ const AddUser = ({ onClose }) => {
         ))}
       </select>
 
-      <select
-        name="role"
-        value={form.role}
-        onChange={handleChange}
-        disabled={loading}
-        className="w-full px-4 py-2 border rounded-lg bg-white"
-      >
-        <option value="employee">Employee</option>
-      </select>
-
+      {/* PAYMENT */}
       <select
         name="payment"
         value={form.payment}
@@ -135,10 +139,11 @@ const AddUser = ({ onClose }) => {
         <option value="unpaid">Unpaid</option>
       </select>
 
+      {/* ACTIONS */}
       <div className="flex justify-end gap-3 pt-4">
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onClose(false)}
           disabled={loading}
           className="px-4 py-2 border rounded-lg"
         >
@@ -147,7 +152,7 @@ const AddUser = ({ onClose }) => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !form.department}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
         >
           {loading ? "Saving..." : "Create User"}

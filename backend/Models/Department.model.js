@@ -20,6 +20,14 @@ const departmentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    leaves: {
+      type: Number,
+      default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

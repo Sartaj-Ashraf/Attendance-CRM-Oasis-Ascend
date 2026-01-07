@@ -10,12 +10,17 @@ const router = express.Router();
 // ⚠️ Use only in DEV
 router.post("/seed/full-attendance", authMiddleware, async (req, res) => {
   try {
+    /* ============================
+       SAFE BODY HANDLING
+    ============================ */
+    const body = req.body || {};
+
     const {
-      departmentName = "DEVELOPMENT",
-      totalUsers = 50,
+      departments = ["DEVELOPMENT", "DESIGN", "HR", "MARKETING", "SALES"],
+      usersPerDepartment = 100,
       days = 90,
       markedBy,
-    } = req.body;
+    } = body;
 
     if (!markedBy) {
       return res.status(400).json({
@@ -24,82 +29,93 @@ router.post("/seed/full-attendance", authMiddleware, async (req, res) => {
       });
     }
 
-    /* ============================
-       1️⃣ Create Department
-    ============================ */
-    let department = await DepartmentModel.findOne({
-      name: departmentName.toUpperCase(),
-    });
-
-    if (!department) {
-      department = await DepartmentModel.create({
-        name: departmentName.toUpperCase(),
-      });
-    }
-
-    /* ============================
-       2️⃣ Create Users
-    ============================ */
-    const users = [];
     const password = await bcrypt.hash("Password@123", 10);
+    const statuses = ["present", "present", "present", "late", "absent"];
 
-    for (let i = 1; i <= totalUsers; i++) {
-      users.push({
-        username: `employee${i}`,
-        email: `employee${i}@example.com`,
-        password,
-        phone: `9${String(100000000 + i).slice(0, 9)}`,
-        role: "employee",
-        department: department._id,
-        isActive: true,
-      });
-    }
-
-    const createdUsers = await UserModel.insertMany(users, {
-      ordered: false,
-    });
+    let totalUsersCreated = 0;
+    let totalAttendanceCreated = 0;
 
     /* ============================
-       3️⃣ Generate Attendance
+       LOOP DEPARTMENTS
     ============================ */
-    const statuses = ["present", "present", "present", "late", "absent"];
-    const attendanceRecords = [];
+    for (const deptName of departments) {
+      const cleanDept = deptName.trim().toUpperCase();
 
-    createdUsers.forEach((user, userIndex) => {
-      for (let d = 0; d < days; d++) {
-        const date = new Date();
-        date.setDate(date.getDate() - d);
-        date.setHours(0, 0, 0, 0);
+      /* 1️⃣ CREATE / FIND DEPARTMENT */
+      let department = await DepartmentModel.findOne({ name: cleanDept });
 
-        attendanceRecords.push({
-          user: user._id,
-          date,
-          status: statuses[(userIndex + d) % statuses.length],
-          markedBy,
-          note: "Auto generated attendance",
+      if (!department) {
+        department = await DepartmentModel.create({
+          name: cleanDept,
+          isActive: true,
+          members: 0,
         });
       }
-    });
 
-    await AttendanceModel.insertMany(attendanceRecords, {
-      ordered: false,
-    });
+      /* 2️⃣ CREATE USERS (SAFE) */
+      const createdUsers = [];
+
+      for (let i = 1; i <= usersPerDepartment; i++) {
+        const email = `${cleanDept.toLowerCase()}_emp_${i}@example.com`;
+
+        const exists = await UserModel.findOne({ email });
+        if (exists) continue;
+
+        const user = await UserModel.create({
+          username: `${cleanDept.toLowerCase()}_emp_${i}`,
+          email,
+          password,
+          phone: `9${String(100000000 + i).slice(0, 9)}`,
+          role: "employee",
+          department: department._id,
+          isActive: true,
+        });
+
+        createdUsers.push(user);
+        totalUsersCreated++;
+      }
+
+      /* UPDATE MEMBERS COUNT */
+      department.members += createdUsers.length;
+      await department.save();
+
+      /* 3️⃣ GENERATE ATTENDANCE */
+      const attendanceRecords = [];
+
+      createdUsers.forEach((user, userIndex) => {
+        for (let d = 0; d < days; d++) {
+          const date = new Date();
+          date.setDate(date.getDate() - d);
+          date.setHours(0, 0, 0, 0);
+
+          attendanceRecords.push({
+            user: user._id,
+            date,
+            status: statuses[(userIndex + d) % statuses.length],
+            markedBy,
+            note: "Auto generated attendance",
+          });
+        }
+      });
+
+      if (attendanceRecords.length) {
+        await AttendanceModel.insertMany(attendanceRecords, {
+          ordered: false,
+        });
+
+        totalAttendanceCreated += attendanceRecords.length;
+      }
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Department, users and attendance created successfully",
-      department: department.name,
-      usersCreated: createdUsers.length,
-      attendanceRecords: attendanceRecords.length,
+      message: "Seed data created successfully",
+      departmentsProcessed: departments.length,
+      usersCreated: totalUsersCreated,
+      attendanceRecords: totalAttendanceCreated,
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(201).json({
-        success: true,
-        message:
-          "Some records already existed, remaining data inserted successfully",
-      });
-    }
+    console.error("Seed Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -108,6 +124,7 @@ router.post("/seed/full-attendance", authMiddleware, async (req, res) => {
     });
   }
 });
+
 router.post("/single-user", async (req, res) => {
   try {
     const { userId, days = 1000, markedBy } = req.body;
@@ -186,5 +203,96 @@ router.post("/single-user", async (req, res) => {
     });
   }
 });
+router.post(
+  "/seed/add-users-to-department",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const departmentId = "695df71f2d797fe8b14b18b3";
+      const usersCount = 100;
+
+      /* =========================
+         FIND DEPARTMENT
+      ========================= */
+      const department = await DepartmentModel.findOne({
+        _id: departmentId,
+        isActive: true,
+      });
+
+      if (!department) {
+        return res.status(404).json({
+          success: false,
+          message: "Department not found or inactive",
+        });
+      }
+
+      /* =========================
+         CHECK ACTIVE MANAGER 🔥
+      ========================= */
+      const activeManagerExists = await UserModel.exists({
+        _id: { $in: department.managers },
+        role: "manager",
+        isActive: true,
+      });
+
+      if (!activeManagerExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Department has no active manager",
+        });
+      }
+
+      const password = await bcrypt.hash("Password@123", 10);
+      const users = [];
+      let createdCount = 0;
+
+      /* =========================
+         CREATE USERS
+      ========================= */
+      for (let i = 1; i <= usersCount; i++) {
+        const email = `dev_emp_${i}@example.com`;
+
+        const exists = await UserModel.findOne({ email });
+        if (exists) continue;
+
+        users.push({
+          username: `dev_emp_${i}`,
+          email,
+          password,
+          phone: `9${String(100000000 + i).slice(0, 9)}`,
+          role: "employee",
+          department: department._id,
+          isActive: true,
+        });
+
+        createdCount++;
+      }
+
+      if (users.length) {
+        await UserModel.insertMany(users, { ordered: false });
+
+        await DepartmentModel.findByIdAndUpdate(department._id, {
+          $inc: { members: users.length },
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Users added successfully",
+        department: department.name,
+        usersRequested: usersCount,
+        usersCreated: createdCount,
+      });
+    } catch (error) {
+      console.error("Add Users Error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to add users",
+        error: error.message,
+      });
+    }
+  }
+);
 
 export default router;

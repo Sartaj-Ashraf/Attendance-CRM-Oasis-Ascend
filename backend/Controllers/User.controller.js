@@ -306,6 +306,7 @@ export const resetpassword = async (req, res) => {
     return res.status(200).json({
       success: true,
       msg: "Password reset link sent to email",
+      resetUrl,
     });
   } catch (error) {
     console.error(error);

@@ -3,9 +3,17 @@ import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import api from "../axios/axios.js";
+import { useParams, useSearchParams } from "react-router-dom";
 const SetPassword = ({ data }) => {
-  const { userName, email, token } = data;
+  const { userName, email } = data;
+  // const { token } = useParams();
+
+  // import { useSearchParams } from "react-router-dom";
+
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,7 +35,10 @@ const SetPassword = ({ data }) => {
     setLoading(true);
 
     try {
-      await axios.patch("http://localhost:5000/user/setpassword", {
+      console.log(password);
+      console.log(email);
+      console.log(token);
+      await api.patch("/user/setpassword", {
         email,
         token,
         password,

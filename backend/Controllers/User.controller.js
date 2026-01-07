@@ -8,11 +8,12 @@ import Attendance from "../Models/Attendence.model.js";
 import { generatePasswordToken } from "../utils/passwordToken.util.js";
 import { sendEmail } from "../services/email.service.js";
 import pagination from "../utils/pagination.js";
+
+/* ================= VERIFY TOKEN ================= */
 export const verifyToken = async (req, res) => {
   try {
     const { email, token } = req.query;
 
-    // 1. Validate input
     if (!email || !token) {
       return res.status(400).json({
         success: false,
@@ -20,14 +21,12 @@ export const verifyToken = async (req, res) => {
       });
     }
 
-    // 2. Find user with valid token
     const user = await UserModel.findOne({
       email,
       passwordSetupToken: token,
       passwordSetupExpires: { $gt: Date.now() },
     });
 
-    // 3. If user not found
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -35,13 +34,11 @@ export const verifyToken = async (req, res) => {
       });
     }
 
-    // 4. Token is valid
     return res.status(200).json({
       success: true,
-      token: token,
-      userName: user.userName,
       message: "Token is valid",
       email: user.email,
+      username: user.username,
     });
   } catch (error) {
     console.error(error);
@@ -51,18 +48,18 @@ export const verifyToken = async (req, res) => {
     });
   }
 };
+
+/* ================= SET PASSWORD ================= */
 export const setPassword = async (req, res) => {
   try {
     const { email, token, password } = req.body;
 
-    // 1. Validate input
     if (!email || !token || !password) {
       return res.status(400).json({
         message: "Email, token, and password are required",
       });
     }
 
-    // 2. Find user with valid token
     const user = await UserModel.findOne({
       email,
       passwordSetupToken: token,
@@ -75,11 +72,7 @@ export const setPassword = async (req, res) => {
       });
     }
 
-    // 3. Hash new password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // 4. Update user securely
-    user.password = hashedPassword;
+    user.password = await bcrypt.hash(password, 12);
     user.passwordSetupToken = undefined;
     user.passwordSetupExpires = undefined;
     user.isActive = true;
@@ -97,6 +90,8 @@ export const setPassword = async (req, res) => {
     });
   }
 };
+
+/* ================= LOGIN ================= */
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -105,28 +100,27 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ msg: "Email and password are required" });
     }
 
-    const user = await UserModel.findOne({ email }).select("+password");
+    const user = await UserModel.findOne({
+      email,
+      isDeleted: false,
+    }).select("+password");
+
     if (!user) {
-      return res.status(404).json({ msg: "We Could Find Username" });
+      return res.status(401).json({ msg: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ msg: "Invalid credentials" });
     }
+
     if (!user.isActive) {
-      return res.status(400).json({ msg: "Your Account is disable by Admin " });
+      return res.status(403).json({ msg: "Your account is disabled by admin" });
     }
+
     if (!user.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        msg: "Please verify your email. Check your inbox or contact the administrator.",
-      });
-    }
-    if (user.isDeleted) {
       return res.status(403).json({
-        success: false,
-        msg: "You are no longer a member of the society.",
+        msg: "Please verify your email",
       });
     }
 
@@ -135,17 +129,19 @@ export const loginUser = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
-
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+
     const token = GenerateToken(user);
+
     res.cookie("AttendenceToken", token, {
-      httpsOnly: true,
-      secure: false,
-      sameSite: "lax",
+      httpOnly: true,
+      secure: process.env.MODE === "production",
+      sameSite: process.env.MODE === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
+
     return res.status(200).json({
       msg: "Login successful",
       user: userData,
@@ -156,6 +152,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+/* ================= CURRENT ATTENDANCE ================= */
 export const getCurrentAttendance = async (req, res) => {
   try {
     const userId =
@@ -164,20 +161,9 @@ export const getCurrentAttendance = async (req, res) => {
         : req.user.id;
 
     const { from, to } = req.query;
-
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
-    /* ================= VALIDATE DATES ================= */
-    if (from && isNaN(new Date(from))) {
-      return res.status(400).json({ msg: "Invalid from date" });
-    }
-
-    if (to && isNaN(new Date(to))) {
-      return res.status(400).json({ msg: "Invalid to date" });
-    }
-
-    /* ================= VALIDATE USER ================= */
     const user = await UserModel.findById(userId).select(
       "-password -passwordSetupToken -passwordSetupExpires"
     );
@@ -186,26 +172,22 @@ export const getCurrentAttendance = async (req, res) => {
       return res.status(404).json({ msg: "User not found" });
     }
 
-    /* ================= BUILD QUERY ================= */
     const query = { user: userId };
 
     if (from || to) {
       query.date = {};
-
       if (from) {
-        const fromDate = new Date(from);
-        fromDate.setHours(0, 0, 0, 0);
-        query.date.$gte = fromDate;
+        const f = new Date(from);
+        f.setHours(0, 0, 0, 0);
+        query.date.$gte = f;
       }
-
       if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999);
-        query.date.$lte = toDate;
+        const t = new Date(to);
+        t.setHours(23, 59, 59, 999);
+        query.date.$lte = t;
       }
     }
 
-    /* ================= PAGINATION ================= */
     const result = await pagination({
       model: Attendance,
       page,
@@ -214,7 +196,6 @@ export const getCurrentAttendance = async (req, res) => {
       sort: { date: -1 },
     });
 
-    // ✅ THIS IS THE FIX
     return res.status(200).json({
       success: true,
       user,
@@ -222,50 +203,35 @@ export const getCurrentAttendance = async (req, res) => {
       pagination: result.meta,
     });
   } catch (error) {
-    console.error("getCurrentAttendance error:", error);
+    console.error(error);
     return res.status(500).json({ msg: "Server error" });
   }
 };
 
+/* ================= ATTENDANCE SUMMARY ================= */
 export const getAttendanceSummary = async (req, res) => {
   try {
     const { id } = req.user;
     const { from, to } = req.query;
 
-    // 🔹 Validate dates
-    if (from && isNaN(new Date(from))) {
-      return res.status(400).json({ msg: "Invalid from date" });
-    }
-
-    if (to && isNaN(new Date(to))) {
-      return res.status(400).json({ msg: "Invalid to date" });
-    }
-
-    // 🔹 Build match query (FIXED ✅)
     const match = {
-      user: new mongoose.Types.ObjectId(id), // 🔥 IMPORTANT FIX
+      user: new mongoose.Types.ObjectId(id),
     };
 
     if (from || to) {
       match.date = {};
-
       if (from) {
-        const fromDate = new Date(from);
-        fromDate.setHours(0, 0, 0, 0);
-        match.date.$gte = fromDate;
+        const f = new Date(from);
+        f.setHours(0, 0, 0, 0);
+        match.date.$gte = f;
       }
-
       if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999);
-        match.date.$lte = toDate;
+        const t = new Date(to);
+        t.setHours(23, 59, 59, 999);
+        match.date.$lte = t;
       }
     }
 
-    // 🔍 Debug (keep temporarily)
-    console.log("MATCH QUERY:", match);
-
-    // 🔹 MongoDB aggregation
     const summary = await Attendance.aggregate([
       { $match: match },
       {
@@ -276,7 +242,6 @@ export const getAttendanceSummary = async (req, res) => {
       },
     ]);
 
-    // 🔹 Format response
     const result = {
       present: 0,
       absent: 0,
@@ -286,7 +251,7 @@ export const getAttendanceSummary = async (req, res) => {
     };
 
     summary.forEach((item) => {
-      const key = item._id?.toLowerCase();
+      const key = String(item._id).toLowerCase();
       if (result[key] !== undefined) {
         result[key] = item.count;
         result.total += item.count;
@@ -295,16 +260,15 @@ export const getAttendanceSummary = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      from: from || null,
-      to: to || null,
       summary: result,
     });
   } catch (error) {
-    console.error("getAttendanceSummary error:", error);
+    console.error(error);
     return res.status(500).json({ msg: "Server error" });
   }
 };
 
+/* ================= RESET PASSWORD ================= */
 export const resetpassword = async (req, res) => {
   try {
     let { email } = req.body;
@@ -319,10 +283,10 @@ export const resetpassword = async (req, res) => {
     email = email.toLowerCase();
 
     const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(401).json({
+    if (!user || user.isDeleted || !user.isActive) {
+      return res.status(403).json({
         success: false,
-        msg: "User does not exist",
+        msg: "Account is disabled or does not exist",
       });
     }
 
@@ -332,9 +296,7 @@ export const resetpassword = async (req, res) => {
     await sendEmail({
       toEmail: email,
       type: "SET_PASSWORD",
-      data: {
-        resetUrl,
-      },
+      data: { resetUrl },
     });
 
     user.passwordSetupToken = passwordToken;
@@ -346,7 +308,7 @@ export const resetpassword = async (req, res) => {
       msg: "Password reset link sent to email",
     });
   } catch (error) {
-    console.error("Reset Password Error:", error);
+    console.error(error);
     return res.status(500).json({
       success: false,
       msg: "Server error",
@@ -354,14 +316,16 @@ export const resetpassword = async (req, res) => {
   }
 };
 
+/* ================= LOGOUT ================= */
 export const logout = (req, res) => {
   try {
     res.clearCookie("AttendenceToken", {
       httpOnly: true,
-      secure: process.env.MODE === "production", // must match how it was set
+      secure: process.env.MODE === "production",
       sameSite: process.env.MODE === "production" ? "none" : "lax",
-      path: "/", // important
+      path: "/",
     });
+
     return res.status(200).json({
       msg: "Cookie removed successfully",
     });

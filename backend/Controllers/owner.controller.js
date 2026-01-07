@@ -103,7 +103,16 @@ export const createUser = async (req, res) => {
       passwordSetupToken,
       passwordSetupExpires: Date.now() + 60 * 60 * 1000, // 1 hour
     });
+    const rawId = newUser._id.toString();
+    const employeeId = `EMP-${rawId.slice(-7).toUpperCase()}`;
 
+    newUser.employeeId = employeeId;
+    await newUser.save();
+    if (finalRole === "manager") {
+      await DepartmentModel.findByIdAndUpdate(department, {
+        $addToSet: { managers: newUser._id },
+      });
+    }
     // 7️⃣ Response
     res.status(201).json({
       message: "User created successfully",
@@ -408,7 +417,9 @@ export const activateaccount = async (req, res) => {
 export const replaceManager = async (req, res) => {
   try {
     const { id: newManagerId } = req.params;
-
+    if (!mongoose.Types.ObjectId.isValid(newManagerId)) {
+      return res.status(400).json({ msg: "Invalid manager ID" });
+    }
     if (!newManagerId) {
       return res.status(400).json({ msg: "New manager ID is required" });
     }
@@ -418,12 +429,18 @@ export const replaceManager = async (req, res) => {
     if (!newManager || newManager.isDeleted) {
       return res.status(404).json({ msg: "User not found" });
     }
+    if (!newManager.department) {
+      return res.status(400).json({
+        msg: "User is not assigned to any department",
+      });
+    }
 
     // 2️⃣ Find existing manager in same department
     const previousManager = await UserModel.findOne({
       role: "manager",
       department: newManager.department,
       isDeleted: false,
+      isActive: true,
     });
 
     // 3️⃣ If same user already manager
@@ -453,7 +470,9 @@ export const replaceManager = async (req, res) => {
     newManager.role = "manager";
     newManager.reportingManager = null;
     await newManager.save();
-
+    await DepartmentModel.findByIdAndUpdate(newManager.department, {
+      $set: { managers: [newManager._id] },
+    });
     return res.status(200).json({
       msg: "Manager replaced successfully",
       data: {
@@ -635,7 +654,6 @@ export const BlockedUsers = async (req, res) => {
       .json({ success: false, message: "Failed to fetch blocked users" });
   }
 };
-
 
 export const forceLogoutAllUsers = async (req, res) => {
   try {

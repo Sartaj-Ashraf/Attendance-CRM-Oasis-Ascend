@@ -65,21 +65,23 @@ const SearchFilter = ({
       </div>
 
       {/* DEPARTMENT */}
-      {showSelect && (
-        <select
-          value={selectValue}
-          onChange={(e) => onSelectChange(e.target.value)}
-          className="w-full sm:w-48 px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Departments</option>
-          {selectOptions.map((opt) => (
-            <option key={opt[optionValue]} value={opt[optionValue]}>
-              {opt[optionLabel]}
-            </option>
-          ))}
-        </select>
-      )}
+    {showSelect && (
+  <select
+    value={selectValue}
+    onChange={(e) => onSelectChange(e.target.value)}
+    className="w-full sm:w-48 px-4 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">All Departments</option>
 
+    {Array.isArray(selectOptions) &&
+      selectOptions.map((opt) => (
+        <option key={opt[optionValue]} value={opt[optionValue]}>
+          {opt[optionLabel]}
+        </option>
+      ))}
+  </select>
+)}
+P
       {/* 🆕 VERIFIED FILTER */}
       {showVerification && (
         <select

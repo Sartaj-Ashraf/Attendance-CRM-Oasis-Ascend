@@ -46,7 +46,6 @@ export const createUser = async (req, res) => {
       });
     }
 
-    // 4️⃣ Manager logic
     let finalRole = "employee";
     let reportingManager = null;
 

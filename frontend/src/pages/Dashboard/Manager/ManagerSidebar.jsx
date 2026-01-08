@@ -421,8 +421,17 @@ const ManagerSidebar = () => {
             }
           >
             <i className="fas fa-building"></i>
-            My Department
+             Departments
           </NavLink>
+          <NavLink
+            to="/manager/profile"
+            className={({ isActive }) =>
+              `${baseLink} ${isActive ? active : inactive}`
+            }
+          >
+            🙎🏻‍♂️ My Profile
+          </NavLink>
+          
         </nav>
 
         {/* ================= USER FOOTER ================= */}

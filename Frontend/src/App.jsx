@@ -37,9 +37,10 @@ import AttendanceHistory from "./pages/Dashboard/User/AttendanceHistory.jsx";
 import Notifications from "./pages/Dashboard/User/Notifications.jsx";
 import Salary from "./pages/Dashboard/User/Salary.jsx";
 const router = createBrowserRouter([
+  
   {
     path: "/test5",
-    element: <TopBar />,
+    element: <Profile/>,
   },
   {
     path: "/test4",
@@ -137,6 +138,10 @@ const router = createBrowserRouter([
         path: "manage-leaves",
         element: <ManageLeaves />,
       },
+      {
+        path: "profile",
+        element: <Profile/>,
+      },
        {
         path: "department",
         element: <Departments />,
@@ -204,9 +209,11 @@ const router = createBrowserRouter([
 const App = () => {
   return (
     <>
+    <div className="app-container">
       <Toaster richColors position="top-right" />
 
       <RouterProvider router={router} />
+      </div>
     </>
   );
 };

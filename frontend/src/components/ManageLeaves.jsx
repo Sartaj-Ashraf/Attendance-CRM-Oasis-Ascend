@@ -148,7 +148,7 @@ const ManageLeaves = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto responsive-table">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>

@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 
 const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
   return (
+    <div className="responsive-table">
     <tr className="border-b border-gray-300 hover:bg-gray-50 transition">
       {/* NAME */}
       <td className="px-6 py-4 font-medium text-gray-800">
@@ -76,6 +77,7 @@ const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
         </NavLink>
       </td>
     </tr>
+    </div>
   );
 };
 

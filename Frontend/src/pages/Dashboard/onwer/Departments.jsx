@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import { toast } from "react-toastify";
 import api from "../../../axios/axios.js";
 import ConfirmDeleteModal from "../../../components/delete/ConfirmDelete.jsx";
-
-// ⬇️ replace with your real auth context if available
-const userRole = "owner"; // example: owner / manager / employee
+import { AuthContext } from "../../../ContextApi/isAuth";
 
 const Departments = () => {
-  const [departments, setDepartments] = useState([]);
+  const { user } = useContext(AuthContext);
+  const userRole = user?.role; // owner | manager
 
+  const [departments, setDepartments] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -18,42 +18,38 @@ const Departments = () => {
 
   const inputRef = useRef(null);
 
-  /* ================= FETCH DEPARTMENTS ================= */
+  /* ================= FETCH ================= */
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
       setDepartments(res.data?.data || []);
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to fetch departments");
     }
   };
 
   useEffect(() => {
     if (userRole) fetchDepartments();
-  }, []);
+  }, [userRole]);
 
-  /* ================= CREATE DEPARTMENT ================= */
+  /* ================= CREATE ================= */
   const handleCreateDepartment = async () => {
+    if (userRole !== "owner") {
+      return toast.error("You are not allowed to create departments");
+    }
+
     if (!newDepartmentName.trim()) {
-      toast.error("Enter department name");
-      return;
+      return toast.error("Enter department name");
     }
 
     try {
-      const res = await api.post("/department/create", {
-        name: newDepartmentName,
-      });
-
-      toast.success(res.data?.message || "Department created");
-
-      setNewDepartmentName("");
+      await api.post("/department/create", { name: newDepartmentName });
+      toast.success("Department created");
       setShowCreateModal(false);
+      setNewDepartmentName("");
       fetchDepartments();
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to create department"
-      );
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Create failed");
     }
   };
 
@@ -65,25 +61,25 @@ const Departments = () => {
   };
 
   const handleDeleteDepartment = async () => {
+    if (userRole !== "owner") {
+      return toast.error("You are not allowed to delete departments");
+    }
+
     if (deleteConfirmName !== departmentToDelete.name) {
-      toast.error("Department name does not match");
-      return;
+      return toast.error("Department name does not match");
     }
 
     try {
       await api.delete(`/department/delete/${departmentToDelete._id}`);
       toast.success("Department deleted");
       setShowDeleteModal(false);
-      setDepartmentToDelete(null);
       fetchDepartments();
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to delete department"
-      );
+    } catch {
+      toast.error("Delete failed");
     }
   };
+  console.log(departments.data)
 
-  /* ================= AUTO FOCUS ================= */
   useEffect(() => {
     if (showCreateModal && inputRef.current) {
       inputRef.current.focus();
@@ -92,119 +88,93 @@ const Departments = () => {
 
   return (
     <div className="p-6">
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Departments</h1>
+        <h1 className="text-2xl font-bold">Departments</h1>
 
         {userRole === "owner" && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
           >
             + Create Department
           </button>
         )}
       </div>
 
-      {/* ================= TABLE ================= */}
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100 text-gray-700">
+      {/* TABLE */}
+      <div className="bg-white shadow rounded-xl overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="px-6 py-3">Department</th>
-              <th className="px-6 py-3">Managers</th>
-              <th className="px-6 py-3">Employees</th>
+              <th className="px-6 py-3 text-left">Department</th>
+              <th className="px-6 py-3 text-left">Managers</th>
+              <th className="px-6 py-3 text-left">Employees</th>
               {userRole === "owner" && <th className="px-6 py-3">Actions</th>}
             </tr>
           </thead>
 
           <tbody>
-            {departments.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={userRole === "owner" ? 4 : 3}
-                  className="text-center py-6 text-gray-500"
-                >
-                  No departments found
-                </td>
-              </tr>
-            ) : (
-              departments.map((dept) => (
-                <tr
-                  key={dept._id}
-                  className="border-b hover:bg-gray-50 transition"
-                >
-                  {/* Department Name */}
-                  <td className="px-6 py-4 font-medium text-gray-800">
-                    {dept.name}
-                  </td>
+            {departments.map((dept) => (
+              <tr key={dept._id} className="border-b">
+                <td className="px-6 py-4 font-medium">{dept.name}</td>
 
-                  {/* Managers */}
-                  <td className="px-6 py-4 text-gray-600">
-                    {dept.managers?.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {dept.managers.map((mgr) => (
-                          <span
-                            key={mgr._id}
-                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-md"
-                          >
-                            {mgr.name}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-
-                  {/* Employees Count */}
-                  <td className="px-6 py-4 text-gray-700 font-semibold">
-                    {dept.membersCount ?? 0}
-                  </td>
-
-                  {/* Actions */}
-                  {userRole === "owner" && (
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => openDeleteModal(dept)}
-                        className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                <td className="px-6 py-4">
+                  {dept.managers?.length ? (
+                    dept.managers.map((m) => (
+                      <span
+                        key={m._id}
+                        className="mr-2 px-2 py-1 text-xs bg-blue-100 rounded"
                       >
-                        Delete
-                      </button>
-                    </td>
+                        {m.username}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400"></span>
                   )}
-                </tr>
-              ))
-            )}
+                </td>
+
+                <td className="px-6 py-4 font-semibold">
+                  {dept.membersCount ?? 0}
+                </td>
+
+                {userRole === "owner" && (
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => openDeleteModal(dept)}
+                      className="px-4 py-1 bg-red-600 text-white rounded"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* ================= CREATE MODAL ================= */}
+      {/* CREATE MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-96 shadow-xl">
-            <h2 className="text-xl font-bold mb-4">Create Department</h2>
-
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl w-96">
+            <h2 className="text-lg font-bold mb-3">Create Department</h2>
             <input
               ref={inputRef}
               value={newDepartmentName}
               onChange={(e) => setNewDepartmentName(e.target.value)}
-              placeholder="Department name"
-              className="w-full px-4 py-2 border rounded-lg mb-4 focus:ring-2 focus:ring-green-500"
+              className="w-full border px-3 py-2 rounded mb-4"
             />
-
             <div className="flex gap-3">
               <button
                 onClick={handleCreateDepartment}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg"
+                className="flex-1 bg-green-600 text-white py-2 rounded"
               >
                 Create
               </button>
-
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 rounded-lg"
+                className="flex-1 bg-gray-300 py-2 rounded"
               >
                 Cancel
               </button>
@@ -213,13 +183,11 @@ const Departments = () => {
         </div>
       )}
 
-      {/* ================= DELETE MODAL ================= */}
+      {/* DELETE MODAL */}
       <ConfirmDeleteModal
         open={showDeleteModal}
         title="Delete Department"
         message={`Type "${departmentToDelete?.name}" to confirm deletion.`}
-        confirmText="Delete"
-        confirmValue={departmentToDelete?.name}
         inputValue={deleteConfirmName}
         onInputChange={setDeleteConfirmName}
         onConfirm={handleDeleteDepartment}

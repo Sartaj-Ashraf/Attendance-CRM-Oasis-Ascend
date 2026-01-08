@@ -153,7 +153,7 @@ const LeaveDashboard = () => {
           <h2 className="text-lg font-semibold">Leave History</h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto responsive-table">
           <table className="w-full text-sm">
             <thead className="bg-gray-100">
               <tr>

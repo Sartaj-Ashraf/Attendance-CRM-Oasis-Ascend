@@ -62,7 +62,7 @@ const AttendanceReportWidget = () => {
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
-      setDepartments(res.data || []);
+      setDepartments(res.data.data)
     } catch {
       toast.error("Failed to fetch departments");
     }

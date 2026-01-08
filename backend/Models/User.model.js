@@ -108,6 +108,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    canEditPastAttendance: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

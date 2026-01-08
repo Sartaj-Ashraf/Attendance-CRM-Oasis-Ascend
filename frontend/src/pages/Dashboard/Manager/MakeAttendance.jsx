@@ -7,6 +7,7 @@ const MakeAttendance = () => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isHolidayMarked, setIsHolidayMarked] = useState(false);
 
   const [authUser, setAuthUser] = useState(null);
   const [employees, setEmployees] = useState([]);
@@ -18,6 +19,7 @@ const MakeAttendance = () => {
 
   const isSunday = new Date(date).getDay() === 0;
 
+  /* ================= FETCH EMPLOYEES ================= */
   const fetchEmployees = async (user) => {
     try {
       const res =
@@ -32,6 +34,7 @@ const MakeAttendance = () => {
       toast.error("Failed to load employees");
     }
   };
+
   /* ================= FETCH ATTENDANCE ================= */
   const fetchAttendanceByDate = async (selectedDate) => {
     try {
@@ -41,10 +44,8 @@ const MakeAttendance = () => {
 
       const map = {};
 
-      // 1️⃣ Fill existing attendance from backend
       res.data?.data?.forEach((row) => {
         if (!row.user?._id) return;
-
         map[row.user._id] = {
           status: row.status,
           note: row.note || "",
@@ -52,7 +53,6 @@ const MakeAttendance = () => {
         };
       });
 
-      // 2️⃣ DEFAULT → present (if no record exists)
       employees.forEach((emp) => {
         if (!map[emp._id]) {
           map[emp._id] = {
@@ -87,14 +87,14 @@ const MakeAttendance = () => {
   /* ================= AUTO LOAD ================= */
   useEffect(() => {
     if (!authUser || employees.length === 0) return;
-
     fetchAttendanceByDate(date);
     setAttendanceLoaded(true);
+    setIsHolidayMarked(false);
   }, [authUser, employees, date]);
 
   /* ================= AUTO SUNDAY ================= */
   useEffect(() => {
-    if (!isSunday || !attendanceLoaded) return;
+    if (!isSunday || !attendanceLoaded || isHolidayMarked) return;
 
     const holidayMap = {};
     employees.forEach((emp) => {
@@ -106,7 +106,8 @@ const MakeAttendance = () => {
     });
 
     setAttendance(holidayMap);
-  }, [isSunday, attendanceLoaded, employees]);
+    setIsHolidayMarked(true);
+  }, [isSunday, attendanceLoaded, employees, isHolidayMarked]);
 
   /* ================= FILTER ================= */
   const filteredEmployees = useMemo(() => {
@@ -115,36 +116,20 @@ const MakeAttendance = () => {
     );
   }, [employees, search]);
 
-  /* ================= SUMMARY ================= */
-  const summary = useMemo(() => {
-    const counts = {
-      present: 0,
-      absent: 0,
-      late: 0,
-      leave: 0,
-      total: filteredEmployees.length,
-    };
-
-    filteredEmployees.forEach((emp) => {
-      const status = attendance[emp._id]?.status;
-      if (status && counts[status] !== undefined) {
-        counts[status]++;
-      }
-    });
-
-    return counts;
-  }, [attendance, filteredEmployees]);
-
-  /* ================= UPDATE ================= */
+  /* ================= MARK ATTENDANCE ================= */
   const markAttendance = (userId, status) => {
     if (isSunday || attendance[userId]?.isLocked) return;
 
     setAttendance((prev) => ({
       ...prev,
-      [userId]: { ...prev[userId], status },
+      [userId]: {
+        ...prev[userId],
+        status,
+      },
     }));
   };
 
+  /* ================= UPDATE NOTE ================= */
   const updateNote = (userId, note) => {
     if (isSunday || attendance[userId]?.isLocked) return;
 
@@ -154,7 +139,7 @@ const MakeAttendance = () => {
     }));
   };
 
-  /* ================= HOLIDAY ================= */
+  /* ================= MARK HOLIDAY ================= */
   const markHolidayForAll = () => {
     const updated = {};
     employees.forEach((emp) => {
@@ -166,19 +151,19 @@ const MakeAttendance = () => {
     });
 
     setAttendance(updated);
-    toast.success("Holiday marked for all employees");
+    setIsHolidayMarked(true);
     setShowHolidayConfirm(false);
+    toast.success("Holiday marked for all employees");
   };
 
   /* ================= SUBMIT ================= */
   const submitAttendance = async () => {
-    const records = Object.entries(attendance)
-      .filter(([_, v]) => v.status && !v.isLocked)
-      .map(([userId, v]) => ({
-        userId,
-        status: v.status,
-        note: v.note || "",
-      }));
+    const records = Object.entries(attendance).map(([userId, v]) => ({
+      userId,
+      status: v.status,
+      note: v.note || "",
+      isLocked: v.isLocked || false,
+    }));
 
     if (!records.length) return toast("No attendance to submit");
 
@@ -197,9 +182,7 @@ const MakeAttendance = () => {
     let csv = "Name,Department,Status,Note\n";
     filteredEmployees.forEach((emp) => {
       const a = attendance[emp._id] || {};
-      csv += `${emp.username},${emp.department?.name || ""},${a.status || ""},${
-        a.note || ""
-      }\n`;
+      csv += `${emp.username},${emp.department?.name || ""},${a.status || ""},${a.note || ""}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -226,27 +209,28 @@ const MakeAttendance = () => {
           className="border border-gray-300 px-3 py-2 rounded"
         />
 
-        {[
-          ["View Attendance", fetchAttendanceByDate],
-          ["Export", exportCSV],
-        ].map(([label, fn]) => (
-          <button
-            key={label}
-            onClick={() => fn(date)}
-            className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-blue-700 transition"
-          >
-            {label}
-          </button>
-        ))}
+        <button
+          onClick={() => fetchAttendanceByDate(date)}
+          className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-blue-700 transition"
+        >
+          View Attendance
+        </button>
+
+        <button
+          onClick={exportCSV}
+          className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-blue-700 transition"
+        >
+          Export
+        </button>
 
         {!isSunday && (
           <>
-            <button
+            {/* <button
               onClick={() => setShowHolidayConfirm(true)}
               className="cursor-pointer bg-purple-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-purple-700 transition"
             >
               Mark Holiday
-            </button>
+            </button> */}
 
             <button
               onClick={() => setShowSubmitConfirm(true)}
@@ -314,7 +298,6 @@ const MakeAttendance = () => {
 
                   <td className="px-6 py-4">
                     <textarea
-                      placeholder="Enter Notes Here"
                       rows={2}
                       value={current.note || ""}
                       disabled={current.isLocked}

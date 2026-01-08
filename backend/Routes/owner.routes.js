@@ -15,8 +15,9 @@ import {
   // getAllEmployees,
   getAllEmployeesForAttendance,
   createOwner,
-  forceLogoutAllUsers
+  forceLogoutAllUsers,
 } from "../Controllers/owner.controller.js";
+import { canEditAttendance } from "../middleware/canEditPastAttendance.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
   markAttendance,
@@ -29,13 +30,19 @@ router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); //
 router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
 router.patch("/manager/replace/:id", authMiddleware, replaceManager);
 router.post("/markattendence", authMiddleware, isAdmin, markAttendance);
-router.post("/attendance/bulk", authMiddleware, markBulkAttendance);
+router.post(
+  "/attendance/bulk",
+  authMiddleware,
+  // canEditAttendance,
+  markBulkAttendance
+);
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);
 router.get("/getAllUsers", authMiddleware, isAdmin, getAllDepartmentUser);
 router.post("/getBlockedUser", authMiddleware, isAdmin, getBlockedUser);
 router.get("/getManagers", authMiddleware, isAdmin, GetManagers);
 router.get("/getBlockedUsers", authMiddleware, isAdmin, BlockedUsers);
 router.get("/getAllEmployee", authMiddleware, isAdmin, GetAllEmployee);
+
 router.get(
   "/getAllEmployeesForAttendance",
   authMiddleware,

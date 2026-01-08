@@ -89,11 +89,18 @@ export const getMyLeaves = async (req, res) => {
 export const approveLeave = async (req, res) => {
   try {
     const { leaveId } = req.params;
-    const { isPaid } = req.body;
+    const { isPaid, days } = req.body;
 
+    /* ================= VALIDATIONS ================= */
     if (typeof isPaid !== "boolean") {
       return res.status(400).json({
         message: "isPaid must be true or false",
+      });
+    }
+
+    if (!Number.isInteger(days) || days <= 0) {
+      return res.status(400).json({
+        message: "Days must be a positive integer",
       });
     }
 
@@ -104,6 +111,7 @@ export const approveLeave = async (req, res) => {
         $set: {
           status: "approved",
           isPaid,
+          days, // ✅ UPDATED DAYS
           approvedBy: req.user.id,
           approvedAt: new Date(),
         },
@@ -143,6 +151,7 @@ export const approveLeave = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Leave approved successfully",
+      data: leave,
     });
   } catch (error) {
     console.error("Approve Leave Error:", error);

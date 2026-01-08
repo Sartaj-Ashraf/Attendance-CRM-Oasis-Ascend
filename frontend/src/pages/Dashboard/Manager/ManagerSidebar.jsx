@@ -429,7 +429,8 @@ const ManagerSidebar = () => {
               `${baseLink} ${isActive ? active : inactive}`
             }
           >
-            🙎🏻‍♂️ My Profile
+            <i className="fas fa-user "></i>
+             My Profile
           </NavLink>
           
         </nav>

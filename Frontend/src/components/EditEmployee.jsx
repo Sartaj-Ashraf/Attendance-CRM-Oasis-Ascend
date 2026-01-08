@@ -20,7 +20,9 @@ const EditEmployee = ({ user, onClose, onSuccess }) => {
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
-      setDepartments(res.data || []);
+
+      // setDepartments(res)
+      setDepartments(res.data?.data || []);
     } catch {
       toast.error("Failed to fetch departments");
     }

@@ -39,8 +39,8 @@ const Users = () => {
 
   const fetchDepartments = async () => {
     try {
-     const res = await api.get("/department/get");
-    setDepartments(res.data.data)
+      const res = await api.get("/department/get");
+      setDepartments(res.data.data || []);
     } catch {
       toast.error("Failed to fetch departments");
     }
@@ -67,7 +67,7 @@ const Users = () => {
           verification: verification !== "all" ? verification : undefined,
         },
       });
-console.log(res.data.data)
+
       setUsers(res.data.data || []);
       setTotalPages(res.data.meta?.totalPages || 1);
     } catch (error) {

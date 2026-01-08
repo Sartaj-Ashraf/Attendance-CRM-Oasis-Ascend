@@ -6,6 +6,7 @@ const GenerateToken = (user) => {
     role: user.role,
     department: user.department,
     versionToken: user.versionToken,
+    // canEditPastAttendance: user.canEditPastAttendance,
   };
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "24h" });
 };

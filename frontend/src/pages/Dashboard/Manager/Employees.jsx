@@ -54,6 +54,7 @@ const ManagerEmployees = () => {
       const res = await api.get("/owner/getAllUsers", {
         params: { department: deptId },
       });
+      // console.log(res.data.data);
       setEmployees(res.data.data || []);
     } catch {
       toast.error("Failed to fetch employees");

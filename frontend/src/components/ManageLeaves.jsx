@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Loader2, Inbox } from "lucide-react";
+import { Loader2, Inbox } from "lucide-react";
 import api from "../axios/axios.js";
 
 const ManageLeaves = () => {
@@ -15,10 +15,9 @@ const ManageLeaves = () => {
   const [pagination, setPagination] = useState(null);
 
   /* ================= FETCH LEAVES ================= */
-  const fetchLeaves = async (pageNumber = page) => {
+  const fetchLeaves = async (pageNumber = 1) => {
     try {
       setLoading(true);
-
       const res = await api.get("/leaves/all", {
         params: { page: pageNumber, limit },
       });
@@ -37,26 +36,34 @@ const ManageLeaves = () => {
   }, []);
 
   /* ================= APPROVE ================= */
-  const approveLeave = async (leaveId, isPaid) => {
+  const approveLeave = async (leaveId, isPaid, days) => {
+    if (!days || days <= 0) {
+      return toast.error("Days must be greater than 0");
+    }
+
     const toastId = toast.loading("Approving leave...");
     try {
       setActionLoading(leaveId);
 
-      await api.patch(`/leaves/approve/${leaveId}`, { isPaid });
+      await api.patch(`/leaves/approve/${leaveId}`, {
+        isPaid,
+        days,
+      });
 
       setLeaves((prev) =>
         prev.map((l) =>
-          l._id === leaveId ? { ...l, status: "approved", isPaid } : l
+          l._id === leaveId
+            ? { ...l, status: "approved", isPaid, days }
+            : l
         )
       );
 
-      toast.success(`Leave approved (${isPaid ? "Paid" : "Unpaid"})`, {
-        id: toastId,
-      });
+      toast.success("Leave approved successfully", { id: toastId });
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to approve leave", {
-        id: toastId,
-      });
+      toast.error(
+        error?.response?.data?.message || "Failed to approve leave",
+        { id: toastId }
+      );
     } finally {
       setActionLoading(null);
     }
@@ -72,15 +79,18 @@ const ManageLeaves = () => {
 
       setLeaves((prev) =>
         prev.map((l) =>
-          l._id === leaveId ? { ...l, status: "rejected", isPaid: false } : l
+          l._id === leaveId
+            ? { ...l, status: "rejected", isPaid: false }
+            : l
         )
       );
 
       toast.success("Leave rejected", { id: toastId });
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to reject leave", {
-        id: toastId,
-      });
+      toast.error(
+        error?.response?.data?.message || "Failed to reject leave",
+        { id: toastId }
+      );
     } finally {
       setActionLoading(null);
     }
@@ -90,7 +100,7 @@ const ManageLeaves = () => {
   const getStatusBadge = (status, isPaid) => {
     if (status === "approved") {
       return (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col">
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
             Approved
           </span>
@@ -127,7 +137,7 @@ const ManageLeaves = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
           Leave Management
@@ -137,7 +147,7 @@ const ManageLeaves = () => {
         </p>
       </div>
 
-      {/* ================= TABLE ================= */}
+      {/* TABLE */}
       <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
@@ -176,11 +186,40 @@ const ManageLeaves = () => {
                     <td className="px-5 py-4 font-medium">
                       {leave.user?.username || "—"}
                     </td>
+
                     <td className="px-5 py-4">
                       {leave.user?.department?.name || "—"}
                     </td>
-                    <td className="px-5 py-4">{leave.type}</td>
-                    <td className="px-5 py-4">{leave.days}</td>
+
+                       <td className="px-5 py-4">{leave.subject}</td>
+
+                    {/* DAYS (EDITABLE ONLY WHEN PENDING) */}
+                    <td className="px-5 py-4">
+                      {leave.status === "pending" ? (
+                        <input
+                          type="number"
+                          min={1}
+                          className="w-20 px-2 py-1 border rounded-md"
+                          value={leave.days}
+                          onChange={(e) =>
+                            setLeaves((prev) =>
+                              prev.map((l) =>
+                                l._id === leave._id
+                                  ? {
+                                      ...l,
+                                      days: Number(e.target.value),
+                                    }
+                                  : l
+                              )
+                            )
+                          }
+                        />
+                      ) : (
+                        <span>{leave.days}</span>
+                      )}
+                    </td>
+
+                    {/* REASON */}
                     <td className="px-5 py-4 max-w-xs">
                       {expandedReason === leave._id
                         ? leave.reason
@@ -190,7 +229,9 @@ const ManageLeaves = () => {
                           className="ml-2 text-xs text-blue-600"
                           onClick={() =>
                             setExpandedReason(
-                              expandedReason === leave._id ? null : leave._id
+                              expandedReason === leave._id
+                                ? null
+                                : leave._id
                             )
                           }
                         >
@@ -200,26 +241,43 @@ const ManageLeaves = () => {
                         </button>
                       )}
                     </td>
+
                     <td className="px-5 py-4">
                       {getStatusBadge(leave.status, leave.isPaid)}
                     </td>
+
+                    {/* ACTIONS */}
                     <td className="px-5 py-4">
                       {leave.status === "pending" ? (
                         <div className="flex gap-2">
                           <button
                             disabled={rowLoading}
-                            onClick={() => approveLeave(leave._id, true)}
+                            onClick={() =>
+                              approveLeave(
+                                leave._id,
+                                true,
+                                leave.days
+                              )
+                            }
                             className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md"
                           >
                             Paid
                           </button>
+
                           <button
                             disabled={rowLoading}
-                            onClick={() => approveLeave(leave._id, false)}
+                            onClick={() =>
+                              approveLeave(
+                                leave._id,
+                                false,
+                                leave.days
+                              )
+                            }
                             className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md"
                           >
                             Unpaid
                           </button>
+
                           <button
                             disabled={rowLoading}
                             onClick={() => rejectLeave(leave._id)}
@@ -240,7 +298,7 @@ const ManageLeaves = () => {
         </table>
       </div>
 
-      {/* ================= PAGINATION ================= */}
+      {/* PAGINATION */}
       {pagination && (
         <div className="flex justify-between items-center mt-6">
           <p className="text-sm text-gray-600">

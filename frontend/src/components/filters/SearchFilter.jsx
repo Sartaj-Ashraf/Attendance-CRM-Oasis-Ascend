@@ -81,7 +81,7 @@ const SearchFilter = ({
       ))}
   </select>
 )}
-P
+
       {/* 🆕 VERIFIED FILTER */}
       {showVerification && (
         <select

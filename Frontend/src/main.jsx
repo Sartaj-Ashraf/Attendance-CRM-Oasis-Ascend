@@ -8,11 +8,8 @@ import "./styles/Global.css";
 
 createRoot(document.getElementById("root")).render(
   // <StrictMode>
-
     <AuthProvider>
       <App />
     </AuthProvider>
-
-
   // </StrictMode>
 );

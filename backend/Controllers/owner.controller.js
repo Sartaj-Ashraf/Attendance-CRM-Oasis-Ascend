@@ -291,6 +291,27 @@ export const editUser = async (req, res) => {
     }
 
     /* =======================
+       🔐 ROLE-BASED PROTECTION
+    ======================= */
+
+    // ❌ Employees cannot edit users
+    if (req.user.role === "employee") {
+      return res.status(403).json({
+        message: "Not authorized",
+      });
+    }
+
+    // ❌ Manager can ONLY edit users from his department
+    if (
+      req.user.role === "manager" &&
+      String(user.department) !== String(req.user.department)
+    ) {
+      return res.status(403).json({
+        message: "You can only manage users from your department",
+      });
+    }
+
+    /* =======================
        EMAIL (DIRECT UPDATE)
     ======================= */
     if (email) {
@@ -308,18 +329,26 @@ export const editUser = async (req, res) => {
           });
         }
 
-        user.email = email; // ✅ UPDATED
-        user.pendingEmail = null; // cleanup
-        user.isEmailVerified = false; // or false if needed
+        user.email = email;
+        user.pendingEmail = null;
+        user.isEmailVerified = false;
         user.resendTry = 0;
       }
     }
 
     /* =======================
-       DEPARTMENT
+       DEPARTMENT (SECURED)
     ======================= */
-    if (department) {
-      user.department = department;
+    if (req.user.role === "owner") {
+      // 👑 Owner can change department
+      if (department) {
+        user.department = department;
+      }
+    }
+
+    if (req.user.role === "manager") {
+      // 🔒 Manager is FORCED to his department
+      user.department = req.user.department;
     }
 
     /* =======================
@@ -352,6 +381,7 @@ export const editUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const disableaccount = async (req, res) => {
   try {

@@ -1,9 +1,7 @@
-import React, { createContext, useEffect, useState } from "react";
-// import api from "../axios/axios.js";
-import api from "../axios/axios.js";
-import axios from "axios";
-export const AuthContext = createContext(null);
+import { createContext, useEffect, useState } from "react";
+import api from "../axios/axios";
 
+export const AuthContext = createContext(null);
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,18 +9,12 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const checkAuth = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/isAuth`,
-          {
-            withCredentials: true, 
-          }
-        );
+        const res = await api.get("/api/isAuth");
         setUser(res.data.user);
         setIsAuth(true);
-        console.log(res.data.user)
-      } catch (error) {
+      } catch {
         setUser(null);
         setIsAuth(false);
       } finally {
@@ -30,18 +22,12 @@ const AuthProvider = ({ children }) => {
       }
     };
 
-    fetchUser();
+    checkAuth();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isAuth,
-        loading,
-        setUser,
-        setIsAuth,
-      }}
+      value={{ user, setUser, isAuth, setIsAuth, loading }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,33 +1,38 @@
-import SearchFilter from "../../../components/filters/SearchFilter";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import api from "../../../axios/axios";
 
+import api from "../../../axios/axios";
+import SearchFilter from "../../../components/filters/SearchFilter";
+import ConfirmModal from "../../../components/confrim/ConfirmModal";
 import AddUser from "../onwer/AddUser";
-// import SearchFilter from "@/components/common/SearchFilter";
-// import ConfirmModal from "@/components/common/ConfirmModal";
-import ConfirmModel from "../../../components/confrim/ConfirmModal";
+import EditEmployee from "../../../components/EditEmployee";
 
 const ManagerEmployees = () => {
+  /* ================= STATE ================= */
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [departmentId, setDepartmentId] = useState(null);
-  const [showAddUser, setShowAddUser] = useState(false);
 
-  // 🔍 filters
+  // add / edit
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+
+  // filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // ❗ confirm modal
+  // confirm modal
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [confirmUser, setConfirmUser] = useState(null);
+  const [confirmType, setConfirmType] = useState(null); // block | resend
 
-  // 🔹 Fetch logged-in manager
+  /* ================= FETCH LOGGED-IN MANAGER ================= */
   useEffect(() => {
     const fetchAuthUser = async () => {
       try {
         const res = await api.get("/api/isAuth");
-        const deptId = res.data.user?.department?._id;
+        const deptId = res.data?.user?.department?._id;
 
         if (!deptId) {
           toast.error("Department not found for this manager");
@@ -43,19 +48,18 @@ const ManagerEmployees = () => {
     fetchAuthUser();
   }, []);
 
-  // 🔹 Fetch employees
+  /* ================= FETCH EMPLOYEES ================= */
   useEffect(() => {
-    if (departmentId) fetchEmployees(departmentId);
+    if (departmentId) fetchEmployees();
   }, [departmentId]);
 
-  const fetchEmployees = async (deptId) => {
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
       const res = await api.get("/owner/getAllUsers", {
-        params: { department: deptId },
+        params: { department: departmentId },
       });
-      // console.log(res.data.data);
-      setEmployees(res.data.data || []);
+      setEmployees(res.data?.data || []);
     } catch {
       toast.error("Failed to fetch employees");
     } finally {
@@ -63,7 +67,7 @@ const ManagerEmployees = () => {
     }
   };
 
-  // 🔍 filter logic
+  /* ================= FILTER ================= */
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const matchSearch =
@@ -79,40 +83,57 @@ const ManagerEmployees = () => {
     });
   }, [employees, search, statusFilter]);
 
-  // ❗ open confirm modal
-  const handleOpenConfirm = (employee) => {
-    setSelectedEmployee(employee);
+  /* ================= CONFIRM HANDLER ================= */
+  const openConfirm = (user, type) => {
+    setConfirmUser(user);
+    setConfirmType(type);
     setShowConfirm(true);
   };
 
-  // ❗ confirm action (example: block user)
-  const handleConfirmAction = async () => {
-    try {
-      await api.patch(`/manager/block-user/${selectedEmployee._id}`);
-      toast.success("Employee updated");
+  const handleConfirm = async () => {
+    if (!confirmUser || !confirmType) return;
 
-      fetchEmployees(departmentId);
-    } catch {
-      toast.error("Action failed");
+    try {
+      setLoading(true);
+
+      if (confirmType === "resend") {
+        await api.post(`/auth/resend-confirmation/${confirmUser._id}`);
+        toast.success("Verification email sent");
+      }
+
+      if (confirmType === "block") {
+        await api.patch(`/owner/disableaccount/${confirmUser._id}`);
+        toast.warning("Employee blocked");
+      }
+
+      fetchEmployees();
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Action failed"
+      );
     } finally {
+      setLoading(false);
       setShowConfirm(false);
-      setSelectedEmployee(null);
+      setConfirmUser(null);
+      setConfirmType(null);
     }
   };
 
+  /* ================= UI ================= */
   return (
     <div className="p-6">
+      {/* ADD USER */}
       {showAddUser ? (
         <AddUser
           departmentId={departmentId}
           onClose={() => {
             setShowAddUser(false);
-            fetchEmployees(departmentId);
+            fetchEmployees();
           }}
         />
       ) : (
         <>
-          {/* ===== HEADER ===== */}
+          {/* HEADER */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <h1 className="text-2xl font-bold text-gray-800">My Team</h1>
 
@@ -122,7 +143,6 @@ const ManagerEmployees = () => {
               selectValue={statusFilter}
               onSelectChange={setStatusFilter}
               searchPlaceholder="Search employee..."
-              debounceDelay={500}
               selectOptions={[
                 { label: "Active", value: "active" },
                 { label: "Blocked", value: "blocked" },
@@ -131,22 +151,21 @@ const ManagerEmployees = () => {
 
             <button
               onClick={() => setShowAddUser(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Add employee
             </button>
           </div>
 
-          {/* ===== TABLE ===== */}
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-100 text-gray-700">
+          {/* TABLE */}
+          <div className="bg-white shadow rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-100">
                 <tr>
                   <th className="px-6 py-3">Name</th>
                   <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Phone</th>
                   <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Payment</th>
+                  <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Action</th>
                 </tr>
               </thead>
@@ -154,50 +173,65 @@ const ManagerEmployees = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">
-                      Loading employees...
+                    <td colSpan="5" className="text-center py-6">
+                      Loading...
                     </td>
                   </tr>
                 ) : filteredEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-8 text-gray-500">
+                    <td colSpan="5" className="text-center py-6">
                       No employees found
                     </td>
                   </tr>
                 ) : (
                   filteredEmployees.map((emp) => (
-                    <tr
-                      key={emp._id}
-                      className="border-b hover:bg-gray-50 transition"
-                    >
-                      <td className="px-6 py-4 font-medium">{emp.username}</td>
-                      <td className="px-6 py-4 text-gray-600">{emp.email}</td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {emp.phone || "-"}
-                      </td>
+                    <tr key={emp._id} className="border-b">
+                      <td className="px-6 py-4">{emp.username} <sub>   {emp.isEmailVerified  ? (
+                          <span className="text-green-600 font-medium">
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="text-orange-600 font-medium">
+                            Unverified
+                          </span>
+                        )}</sub></td>
+                      <td className="px-6 py-4">{emp.email}</td>
+                      <td className="px-6 py-4">{emp.role}</td>
                       <td className="px-6 py-4">
-                        <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700">
-                          {emp.role}
-                        </span>
+                     {emp.payment}
                       </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 text-sm rounded-full ${
-                            emp.payment === "paid"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {emp.payment}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
+
+                      <td className="px-6 py-4 space-x-2">
+                        {/* EDIT */}
                         <button
-                          onClick={() => handleOpenConfirm(emp)}
-                          className="px-4 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+                          onClick={() => {
+                            setEditUser(emp);
+                            setShowEditUser(true);
+                          }}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
                         >
-                          Block
+                          Edit
                         </button>
+
+                        {/* RESEND ONLY IF UNVERIFIED */}
+                        {!emp.isEmailVerified  && (
+                          <button
+                            onClick={() => openConfirm(emp, "resend")}
+                            className="px-3 py-1 bg-indigo-600 text-white rounded text-sm"
+                          >
+                            Send Verification
+                          </button>
+                        )}
+
+                        {/* BLOCK */}
+                        {emp.isActive && (
+                          <button
+                            onClick={() => openConfirm(emp, "block")}
+                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                          >
+                            Block
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -208,14 +242,33 @@ const ManagerEmployees = () => {
         </>
       )}
 
-      {/* ===== CONFIRM MODAL ===== */}
+      {/* CONFIRM MODAL */}
       {showConfirm && (
-        <ConfirmModel
+        <ConfirmModal
           title="Confirm Action"
-          message={`Are you sure you want to block ${selectedEmployee?.username}?`}
-          onConfirm={handleConfirmAction}
+          message={`Are you sure you want to ${confirmType} ${confirmUser?.username}?`}
+          loading={loading}
+          onConfirm={handleConfirm}
           onCancel={() => setShowConfirm(false)}
         />
+      )}
+
+      {/* EDIT MODAL */}
+      {showEditUser && editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <EditEmployee
+            user={editUser}
+            onClose={() => {
+              setShowEditUser(false);
+              setEditUser(null);
+            }}
+            onSuccess={() => {
+              setShowEditUser(false);
+              setEditUser(null);
+              fetchEmployees();
+            }}
+          />
+        </div>
       )}
     </div>
   );

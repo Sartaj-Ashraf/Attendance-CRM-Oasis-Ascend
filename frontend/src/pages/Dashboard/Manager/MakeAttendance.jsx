@@ -14,7 +14,6 @@ const MakeAttendance = () => {
   const [attendance, setAttendance] = useState({});
 
   const [attendanceLoaded, setAttendanceLoaded] = useState(false);
-  const [showHolidayConfirm, setShowHolidayConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const isSunday = new Date(date).getDay() === 0;
@@ -43,7 +42,6 @@ const MakeAttendance = () => {
       });
 
       const map = {};
-
       res.data?.data?.forEach((row) => {
         if (!row.user?._id) return;
         map[row.user._id] = {
@@ -116,47 +114,23 @@ const MakeAttendance = () => {
     );
   }, [employees, search]);
 
-  /* ================= MARK ATTENDANCE ================= */
+  /* ================= ACTIONS ================= */
   const markAttendance = (userId, status) => {
     if (isSunday || attendance[userId]?.isLocked) return;
-
     setAttendance((prev) => ({
       ...prev,
-      [userId]: {
-        ...prev[userId],
-        status,
-      },
+      [userId]: { ...prev[userId], status },
     }));
   };
 
-  /* ================= UPDATE NOTE ================= */
   const updateNote = (userId, note) => {
     if (isSunday || attendance[userId]?.isLocked) return;
-
     setAttendance((prev) => ({
       ...prev,
       [userId]: { ...prev[userId], note },
     }));
   };
 
-  /* ================= MARK HOLIDAY ================= */
-  const markHolidayForAll = () => {
-    const updated = {};
-    employees.forEach((emp) => {
-      updated[emp._id] = {
-        status: "holiday",
-        note: "Holiday",
-        isLocked: true,
-      };
-    });
-
-    setAttendance(updated);
-    setIsHolidayMarked(true);
-    setShowHolidayConfirm(false);
-    toast.success("Holiday marked for all employees");
-  };
-
-  /* ================= SUBMIT ================= */
   const submitAttendance = async () => {
     const records = Object.entries(attendance).map(([userId, v]) => ({
       userId,
@@ -177,30 +151,25 @@ const MakeAttendance = () => {
     }
   };
 
-  /* ================= EXPORT ================= */
-  const exportCSV = () => {
-    let csv = "Name,Department,Status,Note\n";
-    filteredEmployees.forEach((emp) => {
-      const a = attendance[emp._id] || {};
-      csv += `${emp.username},${emp.department?.name || ""},${a.status || ""},${a.note || ""}\n`;
-    });
+  if (loading) return <p className="p-4">Loading…</p>;
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `attendance_${date}.csv`;
-    link.click();
-  };
-
-  if (loading) return <p className="p-6">Loading…</p>;
+  const statusClass = (current, s) =>
+    current.status === s
+      ? s === "present"
+        ? "bg-green-600 text-white"
+        : s === "absent"
+        ? "bg-red-600 text-white"
+        : s === "late"
+        ? "bg-yellow-500 text-white"
+        : "bg-blue-600 text-white"
+      : "bg-gray-100 hover:bg-gray-200";
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Make Attendance</h1>
+    <div className="p-4 sm:p-6 space-y-6">
+      <h1 className="text-xl sm:text-2xl font-bold">Make Attendance</h1>
 
       {/* CONTROLS */}
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="date"
           value={date}
@@ -211,34 +180,18 @@ const MakeAttendance = () => {
 
         <button
           onClick={() => fetchAttendanceByDate(date)}
-          className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          View Attendance
-        </button>
-
-        <button
-          onClick={exportCSV}
-          className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-blue-700 transition"
-        >
-          Export
+          View
         </button>
 
         {!isSunday && (
-          <>
-            {/* <button
-              onClick={() => setShowHolidayConfirm(true)}
-              className="cursor-pointer bg-purple-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-purple-700 transition"
-            >
-              Mark Holiday
-            </button> */}
-
-            <button
-              onClick={() => setShowSubmitConfirm(true)}
-              className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded border border-gray-300 hover:bg-green-700 transition"
-            >
-              Submit
-            </button>
-          </>
+          <button
+            onClick={() => setShowSubmitConfirm(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Submit
+          </button>
         )}
 
         <input
@@ -246,63 +199,97 @@ const MakeAttendance = () => {
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 px-3 py-2 rounded ml-auto"
+          className="border border-gray-300 px-3 py-2 rounded sm:ml-auto sm:w-64"
         />
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white border border-gray-300 rounded overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-gray-100 border-b border-gray-300">
+      {/* MOBILE CARDS */}
+      <div className="grid gap-4 sm:hidden">
+        {filteredEmployees.map((emp) => {
+          const current = attendance[emp._id] || {};
+          return (
+            <div key={emp._id} className="border rounded p-4 space-y-3">
+              <div>
+                <p className="font-semibold">{emp.username}</p>
+                <p className="text-xs text-gray-500">
+                  {emp.department?.name}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {["present", "absent", "late", "leave"].map((s) => (
+                  <button
+                    key={s}
+                    disabled={current.isLocked}
+                    onClick={() => markAttendance(emp._id, s)}
+                    className={`px-3 py-1 rounded-full text-xs capitalize border ${statusClass(
+                      current,
+                      s
+                    )}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                rows={2}
+                value={current.note || ""}
+                disabled={current.isLocked}
+                onChange={(e) => updateNote(emp._id, e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded text-sm"
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DESKTOP TABLE */}
+      <div className="hidden sm:block overflow-x-auto border rounded">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100 border-b">
             <tr>
-              <th className="px-6 py-3 text-left">Employee</th>
-              <th className="px-6 py-3 text-left">Status</th>
-              <th className="px-6 py-3 text-left">Note</th>
+              <th className="px-4 py-3 text-left">Employee</th>
+              <th className="px-4 py-3 text-left">Status</th>
+              <th className="px-4 py-3 text-left">Note</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-300">
+          <tbody className="divide-y">
             {filteredEmployees.map((emp) => {
               const current = attendance[emp._id] || {};
               return (
                 <tr key={emp._id}>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <p className="font-medium">{emp.username}</p>
                     <p className="text-xs text-gray-500">
                       {emp.department?.name}
                     </p>
                   </td>
 
-                  <td className="px-6 py-4 flex gap-2">
+                  <td className="px-4 py-3 flex gap-2">
                     {["present", "absent", "late", "leave"].map((s) => (
                       <button
                         key={s}
                         disabled={current.isLocked}
                         onClick={() => markAttendance(emp._id, s)}
-                        className={`px-3 py-1 rounded-full text-xs capitalize border border-gray-300 transition hover:scale-105 cursor-pointer ${
-                          current.status === s
-                            ? s === "present"
-                              ? "bg-green-600 text-white"
-                              : s === "absent"
-                              ? "bg-red-600 text-white"
-                              : s === "late"
-                              ? "bg-yellow-500 text-white"
-                              : "bg-blue-600 text-white"
-                            : "bg-gray-100 hover:bg-gray-200"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs capitalize border ${statusClass(
+                          current,
+                          s
+                        )}`}
                       >
                         {s}
                       </button>
                     ))}
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <textarea
                       rows={2}
                       value={current.note || ""}
                       disabled={current.isLocked}
                       onChange={(e) => updateNote(emp._id, e.target.value)}
-                      className="w-full border border-gray-300 px-3 py-2 rounded resize-none text-sm focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm"
                     />
                   </td>
                 </tr>
@@ -311,16 +298,6 @@ const MakeAttendance = () => {
           </tbody>
         </table>
       </div>
-
-      {/* MODALS */}
-      {showHolidayConfirm && (
-        <ConfirmModal
-          title="Mark Holiday"
-          message="Mark holiday for all employees?"
-          onCancel={() => setShowHolidayConfirm(false)}
-          onConfirm={markHolidayForAll}
-        />
-      )}
 
       {showSubmitConfirm && (
         <ConfirmModal

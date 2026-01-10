@@ -209,7 +209,7 @@ const router = createBrowserRouter([
 const App = () => {
   return (
     <>
-    <div className="app-container">
+    <div className="">
       <Toaster richColors position="top-right" />
 
       <RouterProvider router={router} />

@@ -24,7 +24,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // 🧠 debounce + double-click protection
   const lastClickRef = useRef(0);
 
   const changeHandler = (e) => {
@@ -43,20 +42,16 @@ const Login = () => {
 
     try {
       setLoading(true);
-
       const { data } = await api.post("/user/login", formdata);
 
       setIsAuth(true);
       setUser(data.user);
-
-      // ✅ save role safely
       setUserRole(data.user.role);
 
       setSuccess(true);
       toast.success("Login successful");
       setshowWelcome(true);
 
-      // optional safety: hide welcome if navigation is delayed
       setTimeout(() => setshowWelcome(false), 5000);
 
       setTimeout(() => {
@@ -80,23 +75,23 @@ const Login = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Welcome screen */}
       <AnimatePresence>
         {showWelcome && userRole && (
           <motion.div
-            className="relative z-50 overflow-hidden"
+            className="relative z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={{ duration: 0.5 }}
           >
             <FlipWordsDemo role={userRole} />
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Login + Background (only when welcome is hidden) */}
+
       {!showWelcome && (
         <>
+          {/* Background */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <Ballpit
               count={isNight ? 120 : 140}
@@ -104,32 +99,51 @@ const Login = () => {
               friction={isNight ? 0.95 : 0.85}
             />
             <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-br from-indigo-500/10 to-violet-500/10" />
+            <div className="absolute inset-0 backdrop-blur-[2px]" />
           </div>
 
-          {/* Login Card */}
-          <div className="relative z-20 min-h-screen flex items-center justify-center px-6">
-            <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-xl">
-              <h2 className="text-3xl font-bold text-center mb-2">
+          {/* Centered container */}
+          <div className="relative z-20 min-h-screen flex items-center justify-center px-4">
+            <div
+              className="
+                w-full
+                max-w-xs sm:max-w-sm            /* ✅ smaller card width */
+                bg-white rounded-xl             /* ✅ softer radius */
+                p-4 sm:p-5                      /* ✅ reduced padding */
+                shadow-lg
+              "
+            >
+              <h2
+                className="
+                  text-xl sm:text-2xl           /* ✅ smaller heading */
+                  font-semibold
+                  text-center
+                  mb-1
+                "
+              >
                 Welcome Back
               </h2>
 
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-center mb-6"
+              <p
+                className="
+                  text-[11px] sm:text-xs        /* ✅ compact subtitle */
+                  text-center
+                  text-gray-500
+                  mb-4
+                "
               >
-                <p className="text-sm font-semibold text-indigo-600">
-                  Smart Attendance & Workforce Management
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Owner • Manager • Employee
-                </p>
-              </motion.div>
+                Attendance & Workforce System
+              </p>
 
               <input
-                className="w-full mb-4 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="
+                  w-full
+                  mb-3
+                  px-3 py-2.5                   /* ✅ compact input */
+                  text-sm
+                  border rounded-md
+                  focus:outline-none focus:ring-2 focus:ring-indigo-500
+                "
                 placeholder="Email"
                 name="email"
                 value={formdata.email}
@@ -138,9 +152,16 @@ const Login = () => {
                 disabled={loading}
               />
 
-              <div className="relative mb-4">
+              <div className="relative mb-3">
                 <input
-                  className="w-full px-4 py-3 border rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="
+                    w-full
+                    px-3 py-2.5
+                    pr-10
+                    text-sm
+                    border rounded-md
+                    focus:outline-none focus:ring-2 focus:ring-indigo-500
+                  "
                   placeholder="Password"
                   type={showEye ? "text" : "password"}
                   name="password"
@@ -149,61 +170,57 @@ const Login = () => {
                   onKeyDown={handleKeyDown}
                   disabled={loading}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowEye(!showEye)}
-                  className="absolute right-3 top-3 text-gray-500"
+                  className="
+                    absolute right-2 top-1/2 -translate-y-1/2
+                    p-1.5                        /* ✅ compact icon hitbox */
+                    text-gray-500
+                  "
                 >
-                  {showEye ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showEye ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
 
               <motion.button
                 onClick={submitDetails}
                 disabled={loading}
-                whileHover={!loading ? { scale: 1.04 } : {}}
-                whileTap={!loading ? { scale: 0.95 } : {}}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white
-              bg-gradient-to-r from-indigo-600 to-violet-600
-              shadow-lg shadow-indigo-500/30
-              flex items-center justify-center gap-2
-              disabled:opacity-70"
+                whileHover={!loading ? { scale: 1.03 } : {}}
+                whileTap={!loading ? { scale: 0.96 } : {}}
+                className="
+                  w-full
+                  py-2.5                         /* ✅ slimmer button */
+                  rounded-lg
+                  text-sm
+                  font-medium
+                  text-white
+                  bg-gradient-to-r from-indigo-600 to-violet-600
+                  flex items-center justify-center gap-2
+                  disabled:opacity-70
+                "
               >
                 <AnimatePresence mode="wait">
                   {loading && (
                     <motion.span
                       key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                       className="flex items-center gap-2"
                     >
-                      <Loader2 className="animate-spin" size={18} />
-                      Signing in...
+                      <Loader2 className="animate-spin" size={16} />
+                      Signing in
                     </motion.span>
                   )}
 
                   {!loading && success && (
-                    <motion.span
-                      key="success"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle size={18} />
+                    <motion.span key="success" className="flex items-center gap-2">
+                      <CheckCircle size={16} />
                       Success
                     </motion.span>
                   )}
 
                   {!loading && !success && (
-                    <motion.span
-                      key="idle"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      Sign In
-                    </motion.span>
+                    <motion.span key="idle">Sign In</motion.span>
                   )}
                 </AnimatePresence>
               </motion.button>

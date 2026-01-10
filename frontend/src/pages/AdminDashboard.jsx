@@ -4,16 +4,38 @@ import Topbar from "./Dashboard/Topbar";
 
 const AdminDashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Fixed Sidebar */}
+    <div
+      className="
+        min-h-screen bg-gray-100
+        flex                
+        w-full                  /* ✅ layout container */
+      "
+    >
+      {/* ===== FIXED SIDEBAR ===== */}
       <AdminSidebar />
 
-      {/* MAIN CONTENT (OFFSET BY SIDEBAR WIDTH) */}
-      <div className="ml-60 min-h-screen flex flex-col">
-        {/* Optional Topbar */}
+      {/* ===== MAIN CONTENT ===== */}
+      <div
+        className="
+        w-full
+          min-h-screen
+          flex flex-col
+          ml-0                                /* ✅ no space on mobile */
+          sm:ml-60                            /* ✅ space only when sidebar is visible */
+          transition-all duration-300         /* ✅ smooth resize */
+        "
+      >
+        {/* ===== TOPBAR ===== */}
         <Topbar />
 
-        <main className="flex-1 p-8 overflow-y-auto ">
+        {/* ===== PAGE CONTENT ===== */}
+        <main
+          className="
+            flex-1
+            overflow-y-auto
+            p-4 sm:p-6 lg:p-8               /* ✅ responsive padding */
+          "
+        >
           <Outlet /> {/* Admin pages render here */}
         </main>
       </div>

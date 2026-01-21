@@ -20,9 +20,9 @@ router.get("/isAuth", authMiddleware, async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      phone:user.phone,
+      phone: user.phone,
       department: user.department,
-    },  
+    },
   });
 });
 router.get("/GetAttendanceByDate", authMiddleware, getAttendanceByDate);

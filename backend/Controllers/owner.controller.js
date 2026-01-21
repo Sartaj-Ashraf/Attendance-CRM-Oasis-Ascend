@@ -289,12 +289,6 @@ export const editUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    /* =======================
-       🔐 ROLE-BASED PROTECTION
-    ======================= */
-
-    // ❌ Employees cannot edit users
     if (req.user.role === "employee") {
       return res.status(403).json({
         message: "Not authorized",
@@ -335,10 +329,6 @@ export const editUser = async (req, res) => {
         user.resendTry = 0;
       }
     }
-
-    /* =======================
-       DEPARTMENT (SECURED)
-    ======================= */
     if (req.user.role === "owner") {
       // 👑 Owner can change department
       if (department) {

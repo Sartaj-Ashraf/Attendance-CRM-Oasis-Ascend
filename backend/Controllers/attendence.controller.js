@@ -1,10 +1,7 @@
 import UserModel from "../Models/User.model.js";
 import AttendanceModel from "../Models/Attendence.model.js";
 import pagination from "../utils/pagination.js";
-// import canEditPastAttendance from "../middleware/canEditPastAttendance.js";
-/* =========================================================
-   MARK SINGLE ATTENDANCE (DATE AWARE + LOCK SAFE)
-========================================================= */
+import mongoose from "mongoose";
 export const markAttendance = async (req, res) => {
   try {
     const { userId, status, note, date } = req.body;
@@ -56,7 +53,7 @@ export const markAttendance = async (req, res) => {
         upsert: true,
         new: true,
         runValidators: true,
-      }
+      },
     )
       .populate("user", "username email")
       .populate("markedBy", "username role");
@@ -74,60 +71,67 @@ export const markAttendance = async (req, res) => {
 /* =========================================================
    BULK ATTENDANCE (NO DUPLICATES + LOCK SAFE)
 ========================================================= */
-export const markBulkAttendance = async (req, res) => {
-  try {
-    const { records, date } = req.body;
 
-    if (!req.user) {
-      return res.status(401).json({ msg: "Unauthorized" });
+export const bulkMarkAttendance = async (req, res) => {
+  try {
+    const { date, records } = req.body;
+
+    if (!date || !records || !records.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Date and records are required",
+      });
     }
 
     const attendanceDate = new Date(date);
     attendanceDate.setHours(0, 0, 0, 0);
 
-    const bulkOps = [];
+    const bulkOps = records
+      .map((rec) => {
+        if (!mongoose.Types.ObjectId.isValid(rec.userId)) return null;
 
-    for (const { userId, status, note } of records) {
-      const existing = await AttendanceModel.findOne({
-        user: userId,
-        date: attendanceDate,
-      });
-
-      if (existing?.isLocked) continue;
-
-      bulkOps.push({
-        updateOne: {
-          filter: { user: userId, date: attendanceDate },
-          update: {
-            $set: {
-              status,
-              note,
-              markedBy: req.user._id,
-              isLocked: ["leave", "holiday"].includes(status),
+        return {
+          updateOne: {
+            filter: {
+              user: rec.userId,
+              date: attendanceDate,
             },
+            update: {
+              $set: {
+                status: rec.status,
+                note: rec.note || "",
+                isLocked: rec.isLocked || false,
+                markedBy: req.user._id,
+              },
+            },
+            upsert: true, // 🔥 THIS PREVENTS DUPLICATE KEY ERRORS
           },
-          upsert: true,
-        },
-      });
-    }
+        };
+      })
+      .filter(Boolean);
 
     if (!bulkOps.length) {
-      return res.status(200).json({
-        msg: "No records updated (all locked or invalid)",
+      return res.status(400).json({
+        success: false,
+        message: "No valid attendance records",
       });
     }
 
-    await AttendanceModel.bulkWrite(bulkOps);
+    await AttendanceModel.bulkWrite(bulkOps, { ordered: false });
 
-    res.status(200).json({
-      msg: "Attendance saved successfully",
-      total: bulkOps.length,
+    return res.status(200).json({
+      success: true,
+      message: "Attendance saved successfully",
     });
-  } catch (err) {
-    res.status(500).json({ msg: err.message });
+  } catch (error) {
+    console.error("Attendance bulk error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit attendance",
+    });
   }
 };
-
 /* =========================================================
    GET ATTENDANCE BY DATE (PAGINATED + ROLE SAFE)
 ========================================================= */

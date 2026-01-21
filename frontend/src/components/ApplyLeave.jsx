@@ -1,5 +1,14 @@
+"use client";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  Calendar,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react";
 import api from "../axios/axios";
 import JoditEditor from "jodit-react";
 
@@ -18,42 +27,34 @@ const LeaveDashboard = () => {
     subject: "",
     reason: "",
   });
-
-  /* ================= LEAVE HISTORY ================= */
   const [leaveHistory, setLeaveHistory] = useState([]);
-
-  /* ================= PAGINATION ================= */
   const [page, setPage] = useState(1);
   const limit = 10;
   const [pagination, setPagination] = useState(null);
 
-  /* ================= JODIT CONFIG ================= */
   const config = useMemo(
     () => ({
       readonly: false,
-      height: 320,
-      placeholder: "Write detailed reason for leave...",
+      height: 280,
+      placeholder: "Reason for leave...",
       toolbarAdaptive: false,
       toolbarSticky: false,
+      buttons: ["bold", "italic", "ul", "ol", "undo", "redo"],
     }),
-    []
+    [],
   );
 
-  /* ================= FETCH MY LEAVES ================= */
+  /* ================= FETCH LOGIC (UNCHANGED) ================= */
   const fetchMyLeaves = async (pageNumber = page) => {
     try {
       setHistoryLoading(true);
-
       const res = await api.get("/leaves/my", {
         params: { page: pageNumber, limit },
       });
-
       setLeaveHistory(res.data.data || []);
       setPagination(res.data.pagination);
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message || "Failed to load leave history"
-      );
+      toast.error("Failed to load history");
     } finally {
       setHistoryLoading(false);
     }
@@ -63,263 +64,256 @@ const LeaveDashboard = () => {
     fetchMyLeaves(1);
   }, []);
 
-  /* ================= HANDLERS ================= */
   const handleChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const submitLeave = async (e) => {
     e.preventDefault();
     if (loading) return;
-
-    if (
-      !form.startDate ||
-      !form.days ||
-      !form.subject.trim() ||
-      !form.reason.trim()
-    ) {
-      toast.error("All fields are required");
-      return;
-    }
-
     try {
       setLoading(true);
-
-      await api.post("/leaves/apply", {
-        startDate: form.startDate,
-        days: Number(form.days),
-        subject: form.subject,
-        reason: form.reason,
-      });
-
-      toast.success("Leave request submitted successfully");
-
-      setForm({
-        startDate: "",
-        days: "",
-        subject: "",
-        reason: "",
-      });
-
+      await api.post("/leaves/apply", { ...form, days: Number(form.days) });
+      toast.success("Submitted");
+      setForm({ startDate: "", days: "", subject: "", reason: "" });
       setShowApply(false);
       fetchMyLeaves(1);
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Failed to submit leave request"
-      );
+      toast.error("Error submitting request");
     } finally {
       setLoading(false);
     }
   };
 
-  const statusColor = (status) => {
+  const getStatusClasses = (status) => {
     switch (status) {
       case "approved":
-        return "bg-green-100 text-green-700";
+        return "text-emerald-600 bg-emerald-50/50";
       case "rejected":
-        return "bg-red-100 text-red-700";
+        return "text-rose-600 bg-rose-50/50";
       default:
-        return "bg-yellow-100 text-yellow-700";
+        return "text-amber-600 bg-amber-50/50";
     }
   };
 
-  const paidBadge = (isPaid) => {
-    if (isPaid === null) return "bg-gray-100 text-gray-600";
-    return isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700";
-  };
-
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-8xl mx-auto p-6 md:p-10 space-y-12 bg-white min-h-screen font-sans antialiased text-slate-900">
       {/* ================= HEADER ================= */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Leave Management
-        </h1>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-medium tracking-tight text-slate-900">
+            Leaves
+          </h1>
+          <p className="text-slate-500 text-sm">
+            Overview of your time-off requests.
+          </p>
+        </div>
 
         <button
           onClick={() => setShowApply(true)}
-          className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
+          className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-slate-800 transition-all active:scale-95"
         >
-          Apply for Leave
+          <Plus size={16} />
+          Apply for leave
         </button>
+      </header>
+
+      {/* ================= STATS SECTION (MINIMAL) ================= */}
+      <div className="grid grid-cols-3 gap-8 py-4 border-y border-slate-100">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+            Total
+          </p>
+          <p className="text-2xl font-light">{leaveHistory.length || 0}</p>
+        </div>
+        <div className="border-x border-slate-100 px-8">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-1">
+            Approved
+          </p>
+          <p className="text-2xl font-light">
+            {leaveHistory.filter((l) => l.status === "approved").length}
+          </p>
+        </div>
+        <div className="pl-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1">
+            Pending
+          </p>
+          <p className="text-2xl font-light">
+            {leaveHistory.filter((l) => l.status === "pending").length}
+          </p>
+        </div>
       </div>
 
-      {/* ================= LEAVE HISTORY ================= */}
-      <div className="bg-white rounded-xl shadow border">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold">Leave History</h2>
-        </div>
-
-        <div className="overflow-x-auto responsive-table">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
+      {/* ================= HISTORY TABLE ================= */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+              <th className="pb-4 font-bold">Date</th>
+              <th className="pb-4 font-bold">Subject</th>
+              <th className="pb-4 font-bold text-center">Days</th>
+              <th className="pb-4 font-bold text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {historyLoading ? (
               <tr>
-                <th className="px-6 py-3 text-left">Start Date</th>
-                <th className="px-6 py-3 text-left">Subject</th>
-                <th className="px-6 py-3 text-left">Days</th>
-                <th className="px-6 py-3 text-left">Status</th>
-                <th className="px-6 py-3 text-left">Paid</th>
-                <th className="px-6 py-3 text-left">Approved By</th>
+                <td
+                  colSpan="4"
+                  className="py-10 text-center text-slate-400 text-sm"
+                >
+                  Updating records...
+                </td>
               </tr>
-            </thead>
-
-            <tbody className="divide-y">
-              {historyLoading ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-6 text-gray-500">
-                    Loading leave history...
+            ) : leaveHistory.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="4"
+                  className="py-10 text-center text-slate-400 text-sm italic"
+                >
+                  No records.
+                </td>
+              </tr>
+            ) : (
+              leaveHistory.map((leave) => (
+                <tr
+                  key={leave._id}
+                  className="group hover:bg-slate-50/50 transition-colors"
+                >
+                  <td className="py-5 text-sm text-slate-600">
+                    {new Date(leave.startDate).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="py-5 text-sm font-medium text-slate-900">
+                    {leave.subject}
+                  </td>
+                  <td className="py-5 text-sm text-center text-slate-600">
+                    {leave.days}
+                  </td>
+                  <td className="py-5 text-right">
+                    <span
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight ${getStatusClasses(leave.status)}`}
+                    >
+                      {leave.status}
+                    </span>
                   </td>
                 </tr>
-              ) : leaveHistory.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-6 text-gray-500">
-                    No leave records found
-                  </td>
-                </tr>
-              ) : (
-                leaveHistory.map((leave) => (
-                  <tr key={leave._id}>
-                    <td className="px-6 py-4">
-                      {new Date(leave.startDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">{leave.subject}</td>
-                    <td className="px-6 py-4">{leave.days}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs ${statusColor(
-                          leave.status
-                        )}`}
-                      >
-                        {leave.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs ${paidBadge(
-                          leave.isPaid
-                        )}`}
-                      >
-                        {leave.isPaid === null
-                          ? "N/A"
-                          : leave.isPaid
-                          ? "PAID"
-                          : "UNPAID"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {leave.approvedBy?.username || "—"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ================= PAGINATION ================= */}
-        {pagination && (
-          <div className="flex justify-between items-center px-6 py-4 border-t">
-            <p className="text-sm text-gray-600">
-              Page {pagination.page} of {pagination.totalPages}
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                disabled={!pagination.hasPrev}
-                onClick={() => {
-                  const prev = page - 1;
-                  setPage(prev);
-                  fetchMyLeaves(prev);
-                }}
-                className="px-4 py-1.5 border rounded-md text-sm disabled:opacity-50"
-              >
-                Previous
-              </button>
-
-              <button
-                disabled={!pagination.hasNext}
-                onClick={() => {
-                  const next = page + 1;
-                  setPage(next);
-                  fetchMyLeaves(next);
-                }}
-                className="px-4 py-1.5 border rounded-md text-sm disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* ================= APPLY LEAVE MODAL ================= */}
+      {/* ================= PAGINATION ================= */}
+      {pagination && (
+        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+          <span>
+            {pagination.page} — {pagination.totalPages}
+          </span>
+          <div className="flex gap-4">
+            <button
+              disabled={!pagination.hasPrev}
+              onClick={() => fetchMyLeaves(page - 1)}
+              className="hover:text-slate-900 disabled:opacity-20 transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              disabled={!pagination.hasNext}
+              onClick={() => fetchMyLeaves(page + 1)}
+              className="hover:text-slate-900 disabled:opacity-20 transition-colors"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL ================= */}
       {showApply && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex p-6 items-center justify-center">
-          <div className="bg-white w-full max-w-7xl rounded-xl shadow-xl">
-            <div className="px-6 py-4 border-b flex justify-between items-center">
-              <h2 className="text-lg font-bold">Apply for Leave</h2>
+        <div className="fixed inset-0 z-50 bg-white md:bg-slate-900/10 md:backdrop-blur-sm flex items-center justify-center p-0 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl h-full md:h-auto md:rounded-3xl border border-slate-100 shadow-2xl flex flex-col">
+            <div className="p-6 md:p-8 flex justify-between items-center">
+              <h2 className="text-xl font-medium">New Leave Request</h2>
               <button
                 onClick={() => setShowApply(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-slate-400 hover:text-slate-900"
               >
-                ✕
+                <MoreHorizontal />
               </button>
             </div>
 
-            <form onSubmit={submitLeave} className="p-6 space-y-4">
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2"
-              />
+            <form
+              onSubmit={submitLeave}
+              className="p-6 md:p-8 pt-0 space-y-6 overflow-y-auto"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Start
+                  </label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={handleChange}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-slate-200"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Days
+                  </label>
+                  <input
+                    type="number"
+                    name="days"
+                    value={form.days}
+                    onChange={handleChange}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-slate-200"
+                  />
+                </div>
+              </div>
 
-              <input
-                type="number"
-                name="days"
-                value={form.days}
-                onChange={handleChange}
-                placeholder="Number of days"
-                className="w-full border rounded-lg px-3 py-2"
-              />
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={form.subject}
+                  onChange={handleChange}
+                  placeholder="Vacation..."
+                  className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-slate-200"
+                />
+              </div>
 
-              <input
-                type="text"
-                name="subject"
-                value={form.subject}
-                onChange={handleChange}
-                placeholder="Leave Subject"
-                className="w-full border rounded-lg px-3 py-2"
-              />
+              <div className="rounded-2xl border border-slate-100 overflow-hidden">
+                <JoditEditor
+                  ref={editor}
+                  value={form.reason}
+                  config={config}
+                  onChange={(c) => setForm((f) => ({ ...f, reason: c }))}
+                />
+              </div>
 
-              <JoditEditor
-                ref={editor}
-                value={form.reason}
-                config={config}
-                onChange={(content) =>
-                  setForm((prev) => ({ ...prev, reason: content }))
-                }
-              />
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowApply(false)}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Cancel
-                </button>
-
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                  className="flex-1 bg-slate-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-slate-800 transition-all"
                 >
-                  {loading ? "Submitting..." : "Submit"}
+                  {loading ? "Sending..." : "Submit request"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowApply(false)}
+                  className="px-6 py-3 text-slate-500 text-sm font-medium"
+                >
+                  Cancel
                 </button>
               </div>
             </form>

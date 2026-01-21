@@ -21,10 +21,10 @@ import { canEditAttendance } from "../middleware/canEditPastAttendance.js";
 import { authMiddleware, isAdmin } from "../middleware/auth.middleware.js";
 import {
   markAttendance,
-  markBulkAttendance,
+  bulkMarkAttendance,
 } from "../Controllers/attendence.controller.js";
 router.post("/create-owner", createOwner);
-router.post("/create", authMiddleware, isAdmin, createUser); // creating user
+router.post("/addUser", authMiddleware, isAdmin, createUser); // creating user
 router.put("/updateUser/:id", authMiddleware,editUser);
 router.patch("/disableaccount/:id", authMiddleware, isAdmin, disableaccount); // block  user
 router.put("/unblockUser/:id", authMiddleware, isAdmin, activateaccount); // unbloack user
@@ -34,7 +34,7 @@ router.post(
   "/attendance/bulk",
   authMiddleware,
   // canEditAttendance,
-  markBulkAttendance
+  bulkMarkAttendance
 );
 router.post("/deleteUser/:id", authMiddleware, isAdmin, deleteUser);
 router.get("/getAllUsers", authMiddleware, isAdmin, getAllDepartmentUser);

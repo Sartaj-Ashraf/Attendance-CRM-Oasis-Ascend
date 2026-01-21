@@ -213,7 +213,10 @@ const Login = () => {
                   )}
 
                   {!loading && success && (
-                    <motion.span key="success" className="flex items-center gap-2">
+                    <motion.span
+                      key="success"
+                      className="flex items-center gap-2"
+                    >
                       <CheckCircle size={16} />
                       Success
                     </motion.span>

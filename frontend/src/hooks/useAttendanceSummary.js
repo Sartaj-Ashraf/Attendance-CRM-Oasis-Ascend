@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import api from "../axios/axios.js";
 
 const useAttendanceSummary = () => {
@@ -6,13 +6,19 @@ const useAttendanceSummary = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchSummary = async ({ from, to }) => {
+  const fetchSummary = useCallback(async ({ from, to, userId }) => {
+    if (!from || !to) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      const res = await api.get("user/getAttendanceSummary", {
-        params: { from, to }, // ✅ CORRECT
+      const res = await api.get("/user/getAttendanceSummary", {
+        params: {
+          from,
+          to,
+          ...(userId && { userId }), // ✅ owner support
+        },
       });
 
       setData(res.data.summary);
@@ -22,7 +28,7 @@ const useAttendanceSummary = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     data,

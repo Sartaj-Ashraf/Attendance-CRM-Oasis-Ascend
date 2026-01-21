@@ -1,222 +1,226 @@
+"use client";
+
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { 
+  Edit3, 
+  Trash2, 
+  Ban, 
+  RefreshCw, 
+  ExternalLink, 
+  Mail, 
+  Phone, 
+  Building2,
+  CheckCircle2,
+  Clock,
+  ShieldCheck,
+  User
+} from "lucide-react";
+
+/**
+ * Enhanced UserRow Component
+ * Includes: 
+ * - Live Status Pulse for verified users
+ * - Modern Glassmorphism touch for desktop rows
+ * - Improved Mobile Card with high-density information layout
+ */
 
 const UserRow = ({ user, onEdit, onBlock, onDelete, onResendVerification }) => {
+  const initials = user.username?.substring(0, 2).toUpperCase() || "??";
+
   return (
     <>
-      {/* ================= DESKTOP / TABLET TABLE ROW ================= */}
-      <tr
-        className="
-          hidden 
-          md:table-row                         /* 🔹 changed: show table from tablet up */
-          border-b border-gray-200              /* 🔹 changed: softer border */
-          hover:bg-gray-50 transition-colors    /* 🔹 changed: subtle hover */
-        "
-      >
-        {/* NAME */}
-        <td className="px-4 lg:px-6 py-3 text-sm font-medium text-gray-800">
-          <div className="flex items-center gap-2">
-            <span className="truncate max-w-[140px] lg:max-w-none">
-              {user.username}
-            </span>
-
-            {!user.isEmailVerified ? (
-              <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                Unverified
+      {/* ================= DESKTOP TABLE ROW ================= */}
+      <tr className="hidden md:table-row border-b border-slate-100 hover:bg-slate-50/80 transition-all group">
+        
+        {/* NAME & AVATAR WITH LIVE PULSE */}
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-[12px] font-bold text-indigo-600 border border-indigo-100 shadow-sm">
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt="" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              {/* Active Indicator */}
+              {user.isActive && (
+                <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+              )}
+            </div>
+            
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-700 leading-none mb-1.5 group-hover:text-blue-600 transition-colors">
+                {user.username}
               </span>
-            ) : (
-              <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                Verified
-              </span>
-            )}
+              
+              {user.isEmailVerified ? (
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Verified
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-500 uppercase tracking-tighter">
+                  <Clock size={10} className="animate-pulse" /> Pending Setup
+                </span>
+              )}
+            </div>
           </div>
         </td>
 
-        {/* EMAIL */}
-        <td className="px-4 lg:px-6 py-3 text-sm text-gray-600 truncate max-w-[200px]">
-          {user.email}
+        {/* EMAIL SECTION */}
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="p-1.5 bg-slate-100 rounded-md">
+              <Mail size={12} className="text-slate-400" />
+            </div>
+            <span className="truncate max-w-[180px] font-medium">{user.email}</span>
+          </div>
         </td>
 
-        {/* PHONE */}
-        <td className="px-4 lg:px-6 py-3 text-sm text-gray-600">
-          {user.phone || "-"}
+        {/* PHONE SECTION */}
+        <td className="px-6 py-4 text-sm text-slate-500 font-medium">
+          {user.phone ? (
+            <div className="flex items-center gap-2">
+              <Phone size={12} className="text-slate-300" />
+              {user.phone}
+            </div>
+          ) : (
+             <span className="text-slate-300 italic text-xs">No phone</span>
+          )}
         </td>
 
-        {/* DEPARTMENT */}
-        <td className="px-4 lg:px-6 py-3 text-sm text-gray-600">
-          {user.department?.name || "-"}
+        {/* DEPARTMENT BADGE */}
+        <td className="px-6 py-4">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 text-[11px] font-bold shadow-sm">
+            <Building2 size={12} className="text-indigo-400" />
+            {user.department?.name || "General"}
+          </div>
         </td>
 
-        {/* ACTIONS */}
-        <td className="px-4 lg:px-6 py-3">
-          <div className="flex flex-wrap gap-2">
+        {/* SMART ACTIONS */}
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-1 translate-x-2 group-hover:translate-x-0 transition-transform duration-300">
             <button
               onClick={() => onEdit(user)}
-              className="
-                px-3 py-1.5 text-xs
-                bg-blue-600 text-white rounded-md
-                hover:bg-blue-700 transition
-              "
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+              title="Edit Profile"
             >
-              Edit
+              <Edit3 size={16} />
             </button>
 
-            {user.isActive && (
+            {user.isActive ? (
               <button
                 onClick={() => onBlock(user)}
-                className="
-                  px-3 py-1.5 text-xs
-                  bg-yellow-600 text-white rounded-md
-                  hover:bg-yellow-700 transition
-                "
+                className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
+                title="Disable Account"
               >
-                Block
+                <Ban size={16} />
+              </button>
+            ) : (
+              <button
+                className="p-2 text-emerald-600 bg-emerald-50 rounded-xl"
+                title="Account Disabled"
+              >
+                <ShieldCheck size={16} />
+              </button>
+            )}
+
+            {!user.isEmailVerified && (
+              <button
+                onClick={() => onResendVerification(user)}
+                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                title="Resend Invite"
+              >
+                <RefreshCw size={16} />
               </button>
             )}
 
             <button
               onClick={() => onDelete(user)}
-              className="
-                px-3 py-1.5 text-xs
-                bg-red-700 text-white rounded-md
-                hover:bg-red-800 transition
-              "
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+              title="Terminate"
             >
-              Delete
+              <Trash2 size={16} />
             </button>
-
-            {!user.isEmailVerified && (
-              <button
-                onClick={() => onResendVerification(user)}
-                className="
-                  px-3 py-1.5 text-xs
-                  bg-orange-500 text-white rounded-md
-                  hover:bg-orange-600 transition
-                "
-              >
-                Resend
-              </button>
-            )}
           </div>
         </td>
 
-        {/* VIEW */}
-        <td className="px-4 lg:px-6 py-3 text-center">
+        {/* VIEW DETAILS */}
+        <td className="px-6 py-4 text-right">
           <NavLink
             to={`/owner/see-employee-attendance/${user._id}`}
-            className="
-              inline-block
-              px-3 py-1.5 text-xs
-              bg-blue-500 text-white rounded-md
-              hover:bg-blue-600 transition
-            "
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-[11px] font-bold rounded-xl hover:bg-blue-600 transition-all shadow-md shadow-slate-200 active:scale-95"
           >
+            <ExternalLink size={12} />
             View
           </NavLink>
         </td>
       </tr>
 
-      {/* ================= MOBILE CARD ================= */}
-      <div
-        className="
-          md:hidden                              /* 🔹 changed: hide card from tablet up */
-          bg-white border border-gray-200
-          rounded-lg p-4 mb-3
-          shadow-sm
-        "
-      >
-        <div className="flex items-start justify-between gap-2">
-          <p className="font-medium text-sm text-gray-800 truncate">
-            {user.username}
-          </p>
+      {/* ================= MOBILE PROFILE CARD ================= */}
+      <div className="md:hidden bg-white border border-slate-200 rounded-[24px] p-5 mb-4 shadow-sm relative overflow-hidden">
+        {/* Accent Bar */}
+        <div className={`absolute top-0 left-0 right-0 h-1.5 ${user.isEmailVerified ? 'bg-emerald-500' : 'bg-amber-400'}`} />
 
-          {!user.isEmailVerified ? (
-            <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-              Unverified
-            </span>
-          ) : (
-            <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-              Verified
-            </span>
-          )}
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+              <User size={24} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-slate-800 text-base">{user.username}</h3>
+              <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                {user.department?.name || "General Staff"}
+              </span>
+            </div>
+          </div>
+          
+          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+            user.isEmailVerified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+          }`}>
+            {user.isEmailVerified ? "Verified" : "Invite Sent"}
+          </div>
         </div>
 
-        <p className="text-xs text-gray-500 break-all mt-1">
-          {user.email}
-        </p>
-
-        <div className="text-xs mt-2 space-y-1">
-          <p>
-            <span className="text-gray-400">Phone:</span>{" "}
-            {user.phone || "-"}
-          </p>
-          <p>
-            <span className="text-gray-400">Department:</span>{" "}
-            {user.department?.name || "-"}
-          </p>
+        <div className="space-y-2 mb-5">
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <Mail size={14} className="text-slate-300" /> {user.email}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <Phone size={14} className="text-slate-300" /> {user.phone || "No contact linked"}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex gap-2">
+           <NavLink
+            to={`/owner/see-employee-attendance/${user._id}`}
+            className="flex-[2] flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-2xl text-xs font-bold"
+          >
+            <ExternalLink size={14} /> View Attendance
+          </NavLink>
+          
           <button
             onClick={() => onEdit(user)}
-            className="
-              px-3 py-2 text-xs
-              border rounded-md
-              hover:bg-gray-50
-            "
+            className="flex-1 flex items-center justify-center bg-slate-100 text-slate-600 py-3 rounded-2xl text-xs font-bold"
           >
             Edit
           </button>
-
-          {user.isActive && (
-            <button
-              onClick={() => onBlock(user)}
-              className="
-                px-3 py-2 text-xs
-                border rounded-md
-                hover:bg-gray-50
-              "
-            >
-              Block
-            </button>
-          )}
-
-          <button
-            onClick={() => onDelete(user)}
-            className="
-              px-3 py-2 text-xs
-              border rounded-md text-red-600
-              hover:bg-red-50
-            "
-          >
-            Delete
-          </button>
-
-          {!user.isEmailVerified && (
-            <button
-              onClick={() => onResendVerification(user)}
-              className="
-                px-3 py-2 text-xs
-                border rounded-md text-orange-600
-                hover:bg-orange-50
-              "
-            >
-              Resend
-            </button>
-          )}
         </div>
 
-        <NavLink
-          to={`/owner/see-employee-attendance/${user._id}`}
-          className="
-            mt-3 block text-center
-            bg-blue-600 text-white
-            py-2 rounded-md text-sm
-            hover:bg-blue-700 transition
-          "
-        >
-          View User
-        </NavLink>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+           {user.isActive && (
+              <button onClick={() => onBlock(user)} className="py-2.5 border border-slate-100 text-amber-600 rounded-xl text-[10px] font-bold uppercase">Block</button>
+           )}
+           {!user.isEmailVerified && (
+              <button onClick={() => onResendVerification(user)} className="py-2.5 border border-slate-100 text-indigo-600 rounded-xl text-[10px] font-bold uppercase">Resend</button>
+           )}
+           <button onClick={() => onDelete(user)} className="py-2.5 border border-rose-50 text-rose-500 rounded-xl text-[10px] font-bold uppercase hover:bg-rose-50">Delete</button>
+        </div>
       </div>
     </>
   );

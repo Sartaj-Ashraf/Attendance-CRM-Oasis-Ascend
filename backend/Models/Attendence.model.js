@@ -6,13 +6,13 @@ const AttendanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true, // 🔥 important for queries
+      index: true,
     },
 
     date: {
       type: Date,
       required: true,
-      index: true, // 🔥 important for date range search
+      index: true, // 
     },
 
     status: {

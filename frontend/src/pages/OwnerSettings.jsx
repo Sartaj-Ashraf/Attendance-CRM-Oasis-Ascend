@@ -55,23 +55,7 @@ const OwnerControlCenter = () => {
     <div className="min-h-screen bg-background">
       {/* ================= HEADER ================= */}
       <header className="gradient-header text-primary-foreground">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">Owner Control Center</h1>
-              <p className="text-white/70 mt-1">
-                Manage profile, security, and system data
-              </p>
-            </div>
-
-            <button
-              disabled={loading}
-              className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 disabled:opacity-50"
-            >
-              {loading ? "Processing..." : "System Active"}
-            </button>
-          </div>
-        </div>
+    
       </header>
 
       {/* ================= CONTENT ================= */}

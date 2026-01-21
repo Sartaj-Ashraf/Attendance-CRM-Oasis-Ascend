@@ -1,5 +1,20 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { 
+  UserPlus, 
+  MoreHorizontal, 
+  Trash2, 
+  UserX, 
+  Mail, 
+  Phone, 
+  Briefcase, 
+  ChevronLeft, 
+  ChevronRight,
+  Filter,
+  Users as UsersIcon
+} from "lucide-react"; // npm install lucide-react
 import api from "../../../axios/axios";
 
 import UserRow from "../../../components/admin/Userdetail";
@@ -29,11 +44,8 @@ const Users = () => {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 30;
 
-  /* ================= FETCH DEPARTMENTS ================= */
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
+  /* ================= FETCH LOGIC (UNCHANGED) ================= */
+  useEffect(() => { fetchDepartments(); }, []);
   const fetchDepartments = async () => {
     try {
       const res = await api.get("/department/get");
@@ -43,28 +55,19 @@ const Users = () => {
     }
   };
 
-  /* ================= RESET PAGE ON FILTER ================= */
-  useEffect(() => {
-    setPage(1);
-  }, [search, department, verification]);
-
-  /* ================= FETCH USERS ================= */
-  useEffect(() => {
-    fetchUsers();
-  }, [page, search, department, verification]);
+  useEffect(() => { setPage(1); }, [search, department, verification]);
+  useEffect(() => { fetchUsers(); }, [page, search, department, verification]);
 
   const fetchUsers = async () => {
     try {
       const res = await api.get("/owner/getAllEmployee", {
         params: {
-          page,
-          limit,
+          page, limit,
           search: search || undefined,
           department: department || undefined,
           verification: verification !== "all" ? verification : undefined,
         },
       });
-
       setUsers(res.data.data || []);
       setTotalPages(res.data.meta?.totalPages || 1);
     } catch (error) {
@@ -72,7 +75,6 @@ const Users = () => {
     }
   };
 
-  /* ================= CONFIRM ================= */
   const openConfirm = (type, user) => {
     setConfirmType(type);
     setConfirmUser(user);
@@ -80,25 +82,20 @@ const Users = () => {
 
   const handleConfirm = async () => {
     if (!confirmUser) return;
-
     try {
       setLoading(true);
-
       if (confirmType === "resend") {
         await api.post(`/auth/resend-confirmation/${confirmUser._id}`);
         toast.success("Set password email sent");
       }
-
       if (confirmType === "delete") {
         await api.post(`/owner/deleteUser/${confirmUser._id}`);
         toast.success("User deleted");
       }
-
       if (confirmType === "block") {
         await api.patch(`/owner/disableaccount/${confirmUser._id}`);
         toast.warning("User blocked");
       }
-
       fetchUsers();
     } catch (error) {
       toast.error("Action failed");
@@ -111,14 +108,27 @@ const Users = () => {
 
   /* ================= UI ================= */
   return (
-    <div className="p-4 sm:p-6">
-      {/* HEADER */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-            Employees
-          </h1>
+    <div className="p-4 md:p-8 bg-[#f9fafb] min-h-screen">
+      {/* HEADER & CONTROLS */}
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <UsersIcon className="text-blue-600" /> Employee Directory
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">Manage personnel, roles, and department assignments</p>
+          </div>
 
+          <button
+            onClick={() => setShowAddUser(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
+          >
+            <UserPlus size={18} />
+            <span>Add Employee</span>
+          </button>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
           <SearchFilter
             searchValue={search}
             onSearchChange={setSearch}
@@ -134,138 +144,109 @@ const Users = () => {
           />
         </div>
 
-        <button
-          onClick={() => setShowAddUser(true)}
-          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Add Employee
-        </button>
-      </div>
-
-      {/* ================= DESKTOP TABLE ================= */}
-      <div className="hidden sm:block bg-white shadow-md rounded-xl overflow-x-auto">
-        <table className="w-full min-w-[900px]">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left">Name</th>
-              <th className="px-6 py-3 text-left">Email</th>
-              <th className="px-6 py-3 text-left">Phone</th>
-              <th className="px-6 py-3 text-left">Department</th>
-              <th className="px-6 py-3 text-left">Action</th>
-              <th className="px-6 py-3 text-left">View</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {users.length === 0 ? (
+        {/* DESKTOP TABLE */}
+        <div className="hidden sm:block bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <td colSpan="6" className="text-center py-8 text-gray-500">
-                  No users found
-                </td>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Name & Bio</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Email</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Phone</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Department</th>
+                <th className="px-6 py-4 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Actions</th>
+                <th className="px-6 py-4 text-right text-[11px] font-bold text-slate-500 uppercase tracking-widest">Details</th>
               </tr>
-            ) : (
-              users.map((user) => (
-                <UserRow
-                  key={user._id}
-                  user={user}
-                  onEdit={(u) => {
-                    setEditUser(u);
-                    setShowEditUser(true);
-                  }}
-                  onDelete={(u) => openConfirm("delete", u)}
-                  onBlock={(u) => openConfirm("block", u)}
-                  onResendVerification={(u) => openConfirm("resend", u)}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-20 text-center">
+                    <div className="flex flex-col items-center text-slate-400">
+                      <UsersIcon size={48} className="mb-4 opacity-20" />
+                      <p className="font-medium">No employees found matching your criteria</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <UserRow
+                    key={user._id}
+                    user={user}
+                    onEdit={(u) => {
+                      setEditUser(u);
+                      setShowEditUser(true);
+                    }}
+                    onDelete={(u) => openConfirm("delete", u)}
+                    onBlock={(u) => openConfirm("block", u)}
+                    onResendVerification={(u) => openConfirm("resend", u)}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* ================= MOBILE CARDS ================= */}
-      <div className="sm:hidden space-y-3">
-        {users.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            No users found
-          </div>
-        ) : (
-          users.map((user) => (
-            <div
-              key={user._id}
-              className="bg-white border rounded-lg p-4 shadow-sm"
+        {/* MOBILE CARDS */}
+        <div className="sm:hidden grid gap-4">
+          {users.length === 0 ? (
+             <div className="py-10 text-center text-slate-400">No users found.</div>
+          ) : (
+            users.map((user) => (
+              <div key={user._id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-slate-800">{user.username}</h3>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
+                      <Mail size={12} /> {user.email}
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-bold uppercase">
+                    {user.department?.name || "Unassigned"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-3 rounded-xl">
+                   <div className="text-slate-500 flex items-center gap-1">
+                      <Phone size={10} /> {user.phone || "N/A"}
+                   </div>
+                   <div className="text-slate-500 flex items-center gap-1">
+                      <Briefcase size={10} /> Employee
+                   </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  <button onClick={() => { setEditUser(user); setShowEditUser(true); }} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">Edit</button>
+                  <button onClick={() => openConfirm("resend", user)} className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200">Resend</button>
+                  <button onClick={() => openConfirm("block", user)} className="px-3 py-2 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold"><UserX size={14}/></button>
+                  <button onClick={() => openConfirm("delete", user)} className="px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold"><Trash2 size={14}/></button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* PAGINATION */}
+        <div className="flex flex-col sm:flex-row items-center justify-between py-6 px-2 gap-4">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            Showing Page <span className="text-slate-900">{page}</span> of <span className="text-slate-900">{totalPages}</span>
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
             >
-              <p className="font-medium text-gray-800">{user.username}</p>
-              <p className="text-xs text-gray-500 break-all">{user.email}</p>
-
-              <div className="mt-2 text-sm">
-                <p>
-                  <span className="text-gray-500">Phone:</span>{" "}
-                  {user.phone || "—"}
-                </p>
-                <p>
-                  <span className="text-gray-500">Department:</span>{" "}
-                  {user.department?.name || "—"}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-3">
-                <button
-                  onClick={() => {
-                    setEditUser(user);
-                    setShowEditUser(true);
-                  }}
-                  className="px-3 py-1 border rounded text-sm"
-                >
-                  Edit
-                </button>
-
-                <button
-                  onClick={() => openConfirm("resend", user)}
-                  className="px-3 py-1 border rounded text-sm"
-                >
-                  Resend
-                </button>
-
-                <button
-                  onClick={() => openConfirm("block", user)}
-                  className="px-3 py-1 border rounded text-sm"
-                >
-                  Block
-                </button>
-
-                <button
-                  onClick={() => openConfirm("delete", user)}
-                  className="px-3 py-1 border rounded text-sm text-red-600"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* PAGINATION */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
-        <span className="text-sm">
-          Page <b>{page}</b> of <b>{totalPages}</b>
-        </span>
-
-        <div className="flex gap-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-4 py-1.5 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-4 py-1.5 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
+              <ChevronLeft size={16} /> Prev
+            </button>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -280,43 +261,40 @@ const Users = () => {
         />
       )}
 
-      {/* ADD USER MODAL */}
+      {/* MODAL OVERLAYS */}
       {showAddUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6 relative">
-            <button
-              onClick={() => setShowAddUser(false)}
-              className="absolute top-3 right-3"
-            >
-              ✕
-            </button>
-
-            <AddUser
-              departments={departments}
-              onClose={() => {
-                setShowAddUser(false);
-                fetchUsers();
-              }}
-            />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm">
+          <div class  ame="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative shadow-2xl">
+           
+            <div className="p-1">
+              <AddUser
+                departments={departments}
+                onClose={() => {
+                  setShowAddUser(false);
+                  fetchUsers();
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
 
-      {/* EDIT USER MODAL */}
       {showEditUser && editUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <EditEmployee
-            user={editUser}
-            onClose={() => {
-              setShowEditUser(false);
-              setEditUser(null);
-            }}
-            onSuccess={() => {
-              setShowEditUser(false);
-              setEditUser(null);
-              fetchUsers();
-            }}
-          />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+           <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl">
+              <EditEmployee
+                user={editUser}
+                onClose={() => {
+                  setShowEditUser(false);
+                  setEditUser(null);
+                }}
+                onSuccess={() => {
+                  setShowEditUser(false);
+                  setEditUser(null);
+                  fetchUsers();
+                }}
+              />
+           </div>
         </div>
       )}
     </div>

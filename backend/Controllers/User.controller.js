@@ -211,12 +211,17 @@ export const getCurrentAttendance = async (req, res) => {
 /* ================= ATTENDANCE SUMMARY ================= */
 export const getAttendanceSummary = async (req, res) => {
   try {
-    const { id } = req.user;
-    const { from, to } = req.query;
+    const { from, to, userId } = req.query;
 
-    const match = {
-      user: new mongoose.Types.ObjectId(id),
-    };
+    const match = {};
+
+    // ✅ If owner sends userId → filter by that user
+    // ✅ Else normal user → own data
+    if (req.user.role === "owner" && userId) {
+      match.user = new mongoose.Types.ObjectId(userId);
+    } else {
+      match.user = new mongoose.Types.ObjectId(req.user.id);
+    }
 
     if (from || to) {
       match.date = {};
@@ -245,8 +250,9 @@ export const getAttendanceSummary = async (req, res) => {
     const result = {
       present: 0,
       absent: 0,
-      leave: 0,
       late: 0,
+      leave: 0,
+      holiday: 0,
       total: 0,
     };
 
@@ -267,6 +273,7 @@ export const getAttendanceSummary = async (req, res) => {
     return res.status(500).json({ msg: "Server error" });
   }
 };
+
 
 /* ================= RESET PASSWORD ================= */
 export const resetpassword = async (req, res) => {

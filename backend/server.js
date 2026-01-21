@@ -30,7 +30,7 @@ app.use(
 
     allowedHeaders: ["Content-Type", "Authorization"],
 
-    credentials: true, // enable cookies / auth headers
+    credentials: true, 
   })
 );
 // seed();
